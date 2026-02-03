@@ -2,15 +2,17 @@ import SwiftUI
 
 struct ProfileView: View {
     @ObservedObject var store: AppStore
-    @StateObject private var authService = AuthService.shared
-    @StateObject private var audioService = AudioService.shared
-    @StateObject private var historyService = RecognitionHistoryService.shared
-    @StateObject private var offlineCache = OfflineFaceCache.shared
-    @StateObject private var onboardingManager = OnboardingManager.shared
+    @ObservedObject private var authService = AuthService.shared
+    @ObservedObject private var audioService = AudioService.shared
+    @ObservedObject private var historyService = RecognitionHistoryService.shared
+    @ObservedObject private var offlineCache = OfflineFaceCache.shared
+    @ObservedObject private var onboardingManager = OnboardingManager.shared
+    @ObservedObject private var familyService = FamilyService.shared
     
     @State private var showAuthSheet = false
     @State private var showSignOutAlert = false
     @State private var showFullHistory = false
+    @State private var showFamilyView = false
     
     private var userName: String {
         authService.currentUser?.fullName ?? authService.currentUser?.email ?? "Guest User"
@@ -83,6 +85,33 @@ struct ProfileView: View {
                             color: Theme.Colors.success
                         ) {
                             showAuthSheet = true
+                        }
+                    }
+                }
+                
+                // Family Section (only show if signed in)
+                if authService.isSignedIn {
+                    VStack(spacing: 12) {
+                        ProfileSectionHeader(title: "Family")
+                        
+                        if let family = familyService.currentFamily {
+                            // Show current family
+                            FamilyCard(
+                                family: family,
+                                memberCount: familyService.familyMembers.count
+                            ) {
+                                showFamilyView = true
+                            }
+                        } else {
+                            // Prompt to create or join
+                            ProfileActionButton(
+                                icon: "person.3.fill",
+                                label: "Set Up Family Sharing",
+                                subtitle: "Share loved ones with caregivers",
+                                color: Theme.Colors.primary
+                            ) {
+                                showFamilyView = true
+                            }
                         }
                     }
                 }
@@ -234,6 +263,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showFullHistory) {
             RecognitionHistoryView(historyService: historyService)
+        }
+        .sheet(isPresented: $showFamilyView) {
+            FamilyView(familyService: familyService)
         }
         .alert("Sign Out", isPresented: $showSignOutAlert) {
             Button("Cancel", role: .cancel) { }
@@ -788,6 +820,64 @@ struct RecognitionHistoryRow: View {
                 .foregroundColor(event.wasOffline ? .orange : Theme.Colors.success)
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Family Card
+
+struct FamilyCard: View {
+    let family: Family
+    let memberCount: Int
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(Theme.Colors.primaryLight)
+                        .frame(width: 44, height: 44)
+                    
+                    Image(systemName: "person.3.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(Theme.Colors.primary)
+                }
+                
+                // Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(family.name)
+                        .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                        .foregroundColor(Theme.Colors.textPrimary)
+                    
+                    Text("\(memberCount) member\(memberCount == 1 ? "" : "s")")
+                        .font(.system(size: Theme.FontSize.caption))
+                        .foregroundColor(Theme.Colors.textSecondary)
+                }
+                
+                Spacer()
+                
+                // Invite code badge
+                Text(family.inviteCode)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .foregroundColor(Theme.Colors.primary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Theme.Colors.primaryLight)
+                    .cornerRadius(6)
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Theme.Colors.textSecondary)
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(Theme.CornerRadius.medium)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
+                    .stroke(Theme.Colors.primary.opacity(0.3), lineWidth: 1)
+            )
+        }
     }
 }
 

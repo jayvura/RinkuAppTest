@@ -1,28 +1,76 @@
 import Foundation
+import Combine
 
 /// Manages onboarding state - tracks if user has completed first-time setup
 final class OnboardingManager: ObservableObject {
     
     static let shared = OnboardingManager()
     
-    private let hasCompletedOnboardingKey = "hasCompletedOnboarding"
+    // Keys for UserDefaults
+    private let hasSeenWelcomeKey = "hasSeenWelcome"  // Global - seen welcome pages
+    private let setupCompletedKeyPrefix = "setupCompleted_"  // Per-user - completed role/family setup
     
-    @Published var hasCompletedOnboarding: Bool {
+    /// Has the user seen the welcome pages (global, not per-user)
+    @Published var hasSeenWelcome: Bool {
         didSet {
-            UserDefaults.standard.set(hasCompletedOnboarding, forKey: hasCompletedOnboardingKey)
+            UserDefaults.standard.set(hasSeenWelcome, forKey: hasSeenWelcomeKey)
         }
     }
     
+    /// Has the current user completed setup (role selection, family setup)
+    /// This is tracked per-user ID
+    @Published var hasCompletedSetup: Bool = false
+    
+    /// Legacy combined property - true if welcome seen AND setup completed
+    var hasCompletedOnboarding: Bool {
+        hasSeenWelcome && hasCompletedSetup
+    }
+    
+    private var currentUserId: String?
+    
     private init() {
-        self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: hasCompletedOnboardingKey)
+        self.hasSeenWelcome = UserDefaults.standard.bool(forKey: hasSeenWelcomeKey)
     }
     
+    /// Call when user signs in to check their setup status
+    func checkSetupStatus(for userId: String) {
+        currentUserId = userId
+        let key = setupCompletedKeyPrefix + userId
+        hasCompletedSetup = UserDefaults.standard.bool(forKey: key)
+    }
+    
+    /// Mark welcome pages as seen
+    func completeWelcome() {
+        hasSeenWelcome = true
+    }
+    
+    /// Mark current user's setup as complete
+    func completeSetup() {
+        guard let userId = currentUserId else { return }
+        let key = setupCompletedKeyPrefix + userId
+        UserDefaults.standard.set(true, forKey: key)
+        hasCompletedSetup = true
+    }
+    
+    /// Legacy method - completes both welcome and setup
     func completeOnboarding() {
-        hasCompletedOnboarding = true
+        hasSeenWelcome = true
+        completeSetup()
     }
     
-    /// For testing - resets onboarding state
+    /// For testing - resets all onboarding state
     func resetOnboarding() {
-        hasCompletedOnboarding = false
+        hasSeenWelcome = false
+        hasCompletedSetup = false
+        if let userId = currentUserId {
+            let key = setupCompletedKeyPrefix + userId
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+    
+    /// Called when user signs out
+    func handleSignOut() {
+        hasCompletedSetup = false
+        currentUserId = nil
     }
 }

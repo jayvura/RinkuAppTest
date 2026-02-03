@@ -8,6 +8,7 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
     var memoryPrompt: String?
     var enrolled: Bool
     var photoFileNames: [String]  // Local file names for stored photos
+    var familyId: String?  // If set, belongs to a family (shared); otherwise personal
 
     var initials: String {
         let parts = fullName.trimmingCharacters(in: .whitespaces).split(separator: " ")
@@ -30,6 +31,11 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
     var photoCount: Int {
         photoFileNames.count
     }
+    
+    /// Whether this loved one belongs to a family (shared)
+    var isShared: Bool {
+        familyId != nil
+    }
 
     init(
         id: String = UUID().uuidString,
@@ -38,7 +44,8 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
         relationship: String,
         memoryPrompt: String? = nil,
         enrolled: Bool = false,
-        photoFileNames: [String] = []
+        photoFileNames: [String] = [],
+        familyId: String? = nil
     ) {
         self.id = id
         self.fullName = fullName
@@ -47,5 +54,6 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
         self.memoryPrompt = memoryPrompt
         self.enrolled = enrolled
         self.photoFileNames = photoFileNames
+        self.familyId = familyId
     }
 }

@@ -2,10 +2,10 @@ import Foundation
 import UIKit
 import Vision
 import CoreImage
+import Combine
 
 /// Caches face data for offline recognition
 /// Uses Vision framework for local face matching when AWS is unavailable
-@MainActor
 final class OfflineFaceCache: ObservableObject {
     
     static let shared = OfflineFaceCache()
@@ -42,7 +42,10 @@ final class OfflineFaceCache: ObservableObject {
     
     /// Simplified face geometry for comparison
     struct FaceGeometry: Codable {
-        let boundingBox: CGRect
+        let boundingBoxX: Double
+        let boundingBoxY: Double
+        let boundingBoxWidth: Double
+        let boundingBoxHeight: Double
         let roll: Double
         let yaw: Double
         // Face proportions for basic matching
@@ -50,6 +53,23 @@ final class OfflineFaceCache: ObservableObject {
         let relativeEyeDistance: Double?
         let relativeNosePosition: Double?
         let relativeMouthPosition: Double?
+        
+        var boundingBox: CGRect {
+            CGRect(x: boundingBoxX, y: boundingBoxY, width: boundingBoxWidth, height: boundingBoxHeight)
+        }
+        
+        init(boundingBox: CGRect, roll: Double, yaw: Double, aspectRatio: Double, relativeEyeDistance: Double?, relativeNosePosition: Double?, relativeMouthPosition: Double?) {
+            self.boundingBoxX = boundingBox.origin.x
+            self.boundingBoxY = boundingBox.origin.y
+            self.boundingBoxWidth = boundingBox.width
+            self.boundingBoxHeight = boundingBox.height
+            self.roll = roll
+            self.yaw = yaw
+            self.aspectRatio = aspectRatio
+            self.relativeEyeDistance = relativeEyeDistance
+            self.relativeNosePosition = relativeNosePosition
+            self.relativeMouthPosition = relativeMouthPosition
+        }
     }
     
     struct OfflineMatchResult {
@@ -360,30 +380,5 @@ final class OfflineFaceCache: ObservableObject {
     private func checkNetworkStatus() {
         // Simple network check - in production, use NWPathMonitor
         // For now, we'll set this based on AWS call success/failure
-    }
-}
-
-// MARK: - CGRect Codable Extension
-
-extension CGRect: Codable {
-    enum CodingKeys: String, CodingKey {
-        case x, y, width, height
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let x = try container.decode(CGFloat.self, forKey: .x)
-        let y = try container.decode(CGFloat.self, forKey: .y)
-        let width = try container.decode(CGFloat.self, forKey: .width)
-        let height = try container.decode(CGFloat.self, forKey: .height)
-        self.init(x: x, y: y, width: width, height: height)
-    }
-    
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(origin.x, forKey: .x)
-        try container.encode(origin.y, forKey: .y)
-        try container.encode(size.width, forKey: .width)
-        try container.encode(size.height, forKey: .height)
     }
 }

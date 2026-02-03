@@ -3,20 +3,52 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var store = AppStore.shared
     @StateObject private var onboardingManager = OnboardingManager.shared
+    @StateObject private var authService = AuthService.shared
     @State private var selectedTab: TabItem = .home
 
     var body: some View {
         Group {
-            if onboardingManager.hasCompletedOnboarding {
-                // Main App
-                mainAppView
+            if !onboardingManager.hasSeenWelcome {
+                // First time: show welcome pages
+                OnboardingView(onboardingManager: onboardingManager, onWelcomeComplete: {
+                    withAnimation {
+                        onboardingManager.completeWelcome()
+                    }
+                })
+                .transition(.opacity)
+            } else if !authService.isSignedIn {
+                // Not signed in: show auth
+                NavigationView {
+                    SetupFlowView(onboardingManager: onboardingManager)
+                }
+            } else if !onboardingManager.hasCompletedSetup {
+                // Signed in but hasn't done role/family setup
+                NavigationView {
+                    SetupFlowView(onboardingManager: onboardingManager)
+                }
             } else {
-                // First-time onboarding
-                OnboardingView(onboardingManager: onboardingManager)
-                    .transition(.opacity)
+                // Fully setup: show main app
+                mainAppView
             }
         }
-        .animation(.easeInOut(duration: 0.4), value: onboardingManager.hasCompletedOnboarding)
+        .animation(.easeInOut(duration: 0.4), value: onboardingManager.hasSeenWelcome)
+        .animation(.easeInOut(duration: 0.4), value: authService.isSignedIn)
+        .animation(.easeInOut(duration: 0.4), value: onboardingManager.hasCompletedSetup)
+        .onChange(of: authService.isSignedIn) { _, isSignedIn in
+            if isSignedIn, let userId = authService.currentUser?.id {
+                // Check this user's setup status
+                onboardingManager.checkSetupStatus(for: userId)
+            } else {
+                // User signed out
+                onboardingManager.handleSignOut()
+            }
+        }
+        .onAppear {
+            // Check setup status on launch if already signed in
+            if authService.isSignedIn, let userId = authService.currentUser?.id {
+                onboardingManager.checkSetupStatus(for: userId)
+            }
+        }
     }
     
     private var mainAppView: some View {
@@ -52,5 +84,5 @@ struct ContentView: View {
 }
 
 #Preview("Onboarding") {
-    OnboardingView(onboardingManager: OnboardingManager.shared)
+    OnboardingView(onboardingManager: OnboardingManager.shared, onWelcomeComplete: {})
 }

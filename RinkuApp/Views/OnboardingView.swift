@@ -2,6 +2,8 @@ import SwiftUI
 
 struct OnboardingView: View {
     @ObservedObject var onboardingManager: OnboardingManager
+    var onWelcomeComplete: (() -> Void)?
+    
     @State private var currentPage = 0
     @State private var animateContent = false
     
@@ -107,14 +109,20 @@ struct OnboardingView: View {
                                 currentPage += 1
                             }
                         } else {
-                            onboardingManager.completeOnboarding()
+                            // Welcome pages done - proceed to setup flow
+                            if let onComplete = onWelcomeComplete {
+                                onComplete()
+                            } else {
+                                // Fallback for backwards compatibility
+                                onboardingManager.completeOnboarding()
+                            }
                         }
                     } label: {
                         HStack(spacing: 8) {
-                            Text(currentPage < pages.count - 1 ? "Continue" : "Get Started")
+                            Text("Continue")
                                 .font(.system(size: 18, weight: .semibold))
                             
-                            Image(systemName: currentPage < pages.count - 1 ? "arrow.right" : "checkmark")
+                            Image(systemName: "arrow.right")
                                 .font(.system(size: 16, weight: .semibold))
                         }
                         .foregroundColor(.white)
@@ -293,5 +301,5 @@ struct OnboardingPageView: View {
 // MARK: - Preview
 
 #Preview {
-    OnboardingView(onboardingManager: OnboardingManager.shared)
+    OnboardingView(onboardingManager: OnboardingManager.shared, onWelcomeComplete: {})
 }

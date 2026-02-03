@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-internal import Combine
+import Combine
 
 @MainActor
 final class AppStore: ObservableObject {
@@ -16,11 +16,13 @@ final class AppStore: ObservableObject {
     private let storageKey = "loved_ones_data"
     private let authService = AuthService.shared
     private let supabaseService = SupabaseService.shared
+    private let familyService = FamilyService.shared
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
         loadLovedOnes()
         setupAuthObserver()
+        setupFamilyObserver()
     }
     
     // MARK: - Auth Observer
@@ -32,11 +34,38 @@ final class AppStore: ObservableObject {
             .sink { [weak self] isSignedIn in
                 Task { @MainActor in
                     if isSignedIn {
+                        // Load family first, then sync
+                        await self?.familyService.loadMyFamily()
                         await self?.syncWithSupabase()
                     }
                 }
             }
             .store(in: &cancellables)
+    }
+    
+    // MARK: - Family Observer
+    
+    private func setupFamilyObserver() {
+        // Watch for family changes to trigger sync
+        familyService.$currentFamily
+            .dropFirst() // Skip initial value
+            .sink { [weak self] family in
+                Task { @MainActor in
+                    // Resync when family changes
+                    await self?.syncWithSupabase()
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    /// Get the family ID to use for new loved ones (if user is in a family)
+    var currentFamilyId: String? {
+        familyService.currentFamily?.id
+    }
+    
+    /// Whether user is in a family
+    var isInFamily: Bool {
+        familyService.isInFamily
     }
 
     // MARK: - Local Persistence
@@ -135,14 +164,24 @@ final class AppStore: ObservableObject {
                     // This is a local-only entry, upload it to Supabase
                     let dto = LovedOneDTO.from(local)
                     if let created = try? await supabaseService.createLovedOne(dto) {
-                        var updatedLocal = local
-                        updatedLocal.id = created.id ?? local.id
+                        let newId = created.id ?? local.id
+                        // Create new LovedOne with the server-assigned ID
+                        let updatedLocal = LovedOne(
+                            id: newId,
+                            fullName: local.fullName,
+                            familiarName: local.familiarName,
+                            relationship: local.relationship,
+                            memoryPrompt: local.memoryPrompt,
+                            enrolled: local.enrolled,
+                            photoFileNames: local.photoFileNames,
+                            familyId: local.familyId
+                        )
                         mergedLovedOnes.append(updatedLocal)
                         
                         // Also upload the photos for this local entry
                         for fileName in local.photoFileNames {
                             if let image = await PhotoStorage.shared.loadPhoto(fileName: fileName) {
-                                _ = try? await supabaseService.uploadPhoto(image: image, lovedOneId: updatedLocal.id)
+                                _ = try? await supabaseService.uploadPhoto(image: image, lovedOneId: newId)
                             }
                         }
                     }
@@ -199,6 +238,7 @@ final class AppStore: ObservableObject {
     // MARK: - Loved Ones Management
 
     /// Add a loved one with photos (new flow)
+    /// If user is in a family, the loved one is automatically added to the family
     func addLovedOne(
         id: String = UUID().uuidString,
         fullName: String,
@@ -208,6 +248,9 @@ final class AppStore: ObservableObject {
         photoFileNames: [String] = [],
         enrolled: Bool = false
     ) {
+        // If user is in a family, automatically add to family
+        let familyId = currentFamilyId
+        
         let newPerson = LovedOne(
             id: id,
             fullName: fullName,
@@ -215,7 +258,8 @@ final class AppStore: ObservableObject {
             relationship: relationship,
             memoryPrompt: memoryPrompt?.isEmpty == true ? nil : memoryPrompt,
             enrolled: enrolled,
-            photoFileNames: photoFileNames
+            photoFileNames: photoFileNames,
+            familyId: familyId
         )
         lovedOnes.append(newPerson)
         saveLovedOnes()

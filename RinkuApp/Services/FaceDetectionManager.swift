@@ -3,10 +3,10 @@ import Vision
 import AVFoundation
 import CoreImage
 import UIKit
+import Combine
 
 /// Manages real-time face detection using Apple's Vision framework (free/on-device)
 /// Triggers auto-recognition when a face has been stable for a threshold duration
-@MainActor
 final class FaceDetectionManager: ObservableObject {
     
     // MARK: - Published State
@@ -124,29 +124,31 @@ final class FaceDetectionManager: ObservableObject {
     // MARK: - Private Methods
     
     private func detectFaces(in pixelBuffer: CVPixelBuffer, image: UIImage) {
+        let minConfidence = self.minimumConfidence
+        
         // Use landmarks request to get yaw/roll for quality analysis
         let request = VNDetectFaceLandmarksRequest { [weak self] request, error in
             guard let self = self else { return }
             
             if let error = error {
                 print("Face detection error: \(error)")
-                Task { @MainActor in
+                DispatchQueue.main.async {
                     self.handleNoFace()
                 }
                 return
             }
             
             guard let results = request.results as? [VNFaceObservation] else {
-                Task { @MainActor in
+                DispatchQueue.main.async {
                     self.handleNoFace()
                 }
                 return
             }
             
             // Filter by confidence
-            let confidentFaces = results.filter { $0.confidence >= self.minimumConfidence }
+            let confidentFaces = results.filter { $0.confidence >= minConfidence }
             
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 if confidentFaces.isEmpty {
                     self.handleNoFace()
                 } else {

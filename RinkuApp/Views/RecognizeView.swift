@@ -5,10 +5,10 @@ struct RecognizeView: View {
     @ObservedObject var store: AppStore
     @Binding var selectedTab: TabItem
     @StateObject private var cameraManager = CameraManager()
-    @StateObject private var audioService = AudioService.shared
+    @ObservedObject private var audioService = AudioService.shared
     @StateObject private var faceDetectionManager = FaceDetectionManager()
-    @StateObject private var historyService = RecognitionHistoryService.shared
-    @StateObject private var offlineCache = OfflineFaceCache.shared
+    @ObservedObject private var historyService = RecognitionHistoryService.shared
+    @ObservedObject private var offlineCache = OfflineFaceCache.shared
 
     @State private var showPermissions = false
     @State private var status: RecognitionStatus = .idle
@@ -310,7 +310,7 @@ struct RecognizeView: View {
                     // Log to history
                     historyService.logRecognition(
                         person: person,
-                        confidence: result.similarity,
+                        confidence: Double(result.similarity),
                         image: image,
                         wasOffline: false
                     )
@@ -441,7 +441,7 @@ struct RecognizeView: View {
                     // Log to history
                     historyService.logRecognition(
                         person: person,
-                        confidence: result.similarity,
+                        confidence: Double(result.similarity),
                         image: sourceImage,
                         wasOffline: false
                     )

@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import Combine
 
 /// Service for Supabase database and storage operations
 @MainActor
@@ -306,6 +307,7 @@ final class SupabaseService: ObservableObject {
 struct LovedOneDTO: Codable {
     var id: String?
     var userId: String?
+    var familyId: String?
     let fullName: String
     let familiarName: String?
     let relationship: String
@@ -317,6 +319,7 @@ struct LovedOneDTO: Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
+        case familyId = "family_id"
         case fullName = "full_name"
         case familiarName = "familiar_name"
         case relationship
@@ -328,7 +331,7 @@ struct LovedOneDTO: Codable {
     
     /// Convert to local LovedOne model
     func toLovedOne(photoFileNames: [String] = []) -> LovedOne {
-        LovedOne(
+        var lovedOne = LovedOne(
             id: id ?? UUID().uuidString,
             fullName: fullName,
             familiarName: familiarName,
@@ -337,6 +340,8 @@ struct LovedOneDTO: Codable {
             enrolled: enrolled,
             photoFileNames: photoFileNames
         )
+        lovedOne.familyId = familyId
+        return lovedOne
     }
     
     /// Create from local LovedOne model
@@ -344,6 +349,7 @@ struct LovedOneDTO: Codable {
         LovedOneDTO(
             id: lovedOne.id,
             userId: nil,
+            familyId: lovedOne.familyId,
             fullName: lovedOne.fullName,
             familiarName: lovedOne.familiarName,
             relationship: lovedOne.relationship,
