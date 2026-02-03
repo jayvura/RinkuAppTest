@@ -2,9 +2,9 @@ import Foundation
 
 /// AWS Configuration for Rekognition
 /// Reads credentials from Secrets.plist (which is gitignored)
-struct AWSConfig {
+enum AWSConfig {
     
-    private static var secrets: [String: Any]? = {
+    nonisolated(unsafe) private static let secrets: [String: Any]? = {
         guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
               let dict = NSDictionary(contentsOfFile: path) as? [String: Any] else {
             print("⚠️ Secrets.plist not found. Copy Secrets.template.plist to Secrets.plist and add your credentials.")
@@ -13,20 +13,20 @@ struct AWSConfig {
         return dict
     }()
     
-    static var accessKeyId: String {
+    nonisolated(unsafe) static var accessKeyId: String {
         secrets?["AWS_ACCESS_KEY_ID"] as? String ?? ""
     }
     
-    static var secretAccessKey: String {
+    nonisolated(unsafe) static var secretAccessKey: String {
         secrets?["AWS_SECRET_ACCESS_KEY"] as? String ?? ""
     }
     
-    static var region: String {
+    nonisolated(unsafe) static var region: String {
         secrets?["AWS_REGION"] as? String ?? "us-east-1"
     }
     
     /// Check if credentials are configured
-    static var isConfigured: Bool {
+    nonisolated(unsafe) static var isConfigured: Bool {
         !accessKeyId.isEmpty && 
         !secretAccessKey.isEmpty &&
         accessKeyId != "YOUR_AWS_ACCESS_KEY_ID" && 
@@ -34,7 +34,7 @@ struct AWSConfig {
     }
     
     /// Rekognition endpoint URL
-    static var rekognitionEndpoint: URL {
+    nonisolated(unsafe) static var rekognitionEndpoint: URL {
         URL(string: "https://rekognition.\(region).amazonaws.com")!
     }
 }

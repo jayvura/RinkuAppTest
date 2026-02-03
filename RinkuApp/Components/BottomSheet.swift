@@ -6,66 +6,69 @@ struct BottomSheet<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            if isPresented {
-                // Backdrop
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            isPresented = false
-                        }
-                    }
-
-                // Sheet
-                VStack(spacing: 0) {
-                    // Handle
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.gray.opacity(0.4))
-                        .frame(width: 48, height: 4)
-                        .padding(.top, 12)
-                        .padding(.bottom, 8)
-
-                    // Header
-                    HStack {
-                        Text(title)
-                            .font(.system(size: Theme.FontSize.h2, weight: .semibold))
-                            .foregroundColor(Theme.Colors.textPrimary)
-
-                        Spacer()
-
-                        Button(action: {
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                if isPresented {
+                    // Backdrop
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .onTapGesture {
                             withAnimation(.easeInOut(duration: 0.25)) {
                                 isPresented = false
                             }
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(Theme.Colors.textSecondary)
-                                .frame(width: 32, height: 32)
-                                .background(Color.gray.opacity(0.1))
-                                .clipShape(Circle())
                         }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
 
-                    Divider()
-                        .background(Theme.Colors.border)
+                    // Sheet
+                    VStack(spacing: 0) {
+                        // Handle
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.gray.opacity(0.4))
+                            .frame(width: 48, height: 4)
+                            .padding(.top, 12)
+                            .padding(.bottom, 8)
 
-                    // Content
-                    ScrollView {
-                        content
-                            .padding(24)
+                        // Header
+                        HStack {
+                            Text(title)
+                                .font(.system(size: Theme.FontSize.h2, weight: .semibold))
+                                .foregroundColor(Theme.Colors.textPrimary)
+
+                            Spacer()
+
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    isPresented = false
+                                }
+                            }) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(Theme.Colors.textSecondary)
+                                    .frame(width: 32, height: 32)
+                                    .background(Color.gray.opacity(0.1))
+                                    .clipShape(Circle())
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 16)
+
+                        Divider()
+                            .background(Theme.Colors.border)
+
+                        // Content
+                        ScrollView {
+                            content
+                                .padding(24)
+                        }
+                        .frame(maxHeight: geometry.size.height * 0.6)
                     }
-                    .frame(maxHeight: UIScreen.main.bounds.height * 0.6)
+                    .background(Color.white)
+                    .cornerRadius(Theme.CornerRadius.large, corners: [.topLeft, .topRight])
+                    .transition(.move(edge: .bottom))
                 }
-                .background(Color.white)
-                .cornerRadius(Theme.CornerRadius.large, corners: [.topLeft, .topRight])
-                .transition(.move(edge: .bottom))
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .animation(.easeInOut(duration: 0.25), value: isPresented)
         }
-        .animation(.easeInOut(duration: 0.25), value: isPresented)
     }
 }
 

@@ -80,8 +80,8 @@ final class CameraSourceManager: ObservableObject {
     
     // MARK: - Initialization
     
-    init(phoneCamera: CameraManager = CameraManager()) {
-        self.phoneCamera = phoneCamera
+    init() {
+        self.phoneCamera = CameraManager()
         setupObservers()
         updateActiveSource()
     }
@@ -261,15 +261,11 @@ final class CameraSourceManager: ObservableObject {
     
     /// Set up frame capture callback for phone camera
     func setupPhoneFrameCapture() {
-        phoneCamera.onFrameCaptured = { [weak self] buffer in
+        phoneCamera.onImageCaptured = { [weak self] image in
             guard let self, self.activeSource == .phone else { return }
             
-            if let image = buffer.toUIImage() {
-                Task { @MainActor in
-                    self.currentFrame = image
-                    self.onFrameCaptured?(image)
-                }
-            }
+            self.currentFrame = image
+            self.onFrameCaptured?(image)
         }
     }
     

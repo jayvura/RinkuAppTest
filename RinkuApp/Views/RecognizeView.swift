@@ -315,15 +315,13 @@ struct RecognizeView: View {
             }
         }
         
-        // Set up phone camera frame callback
-        cameraManager.onFrameCaptured = { buffer in
+        // Set up phone camera frame callback (uses UIImage for Swift 6 Sendable compliance)
+        cameraManager.onImageCaptured = { image in
             // Store the latest image for manual recognition
-            if let image = buffer.toUIImage() {
-                self.lastCapturedImage = image
-            }
+            self.lastCapturedImage = image
             
             // Process frame for face detection (auto mode)
-            self.faceDetectionManager.processFrame(buffer)
+            self.faceDetectionManager.processImage(image)
         }
         
         // Set up glasses frame callback
@@ -607,7 +605,7 @@ struct RecognizeView: View {
         } catch let error as AWSRekognitionService.RekognitionError {
             print("Enrollment error: \(error)")
             status = .enrolled
-            toastMessage = error.localizedDescription ?? "Failed to add photo"
+            toastMessage = error.localizedDescription
             toastType = .error
             showToast = true
         } catch {

@@ -15,7 +15,9 @@ final class CameraManager: NSObject, ObservableObject {
     private let frameQueue = DispatchQueue(label: "camera.frame.queue")
 
     // Callback for when a frame is captured (for face detection later)
+    // Uses UIImage instead of CMSampleBuffer for Sendable compliance
     @MainActor var onFrameCaptured: ((CMSampleBuffer) -> Void)?
+    @MainActor var onImageCaptured: ((UIImage) -> Void)?
 
     enum CameraError: Error, LocalizedError, Sendable {
         case notAuthorized
@@ -170,10 +172,17 @@ final class CameraManager: NSObject, ObservableObject {
 // MARK: - Video Output Delegate
 
 extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // Call the frame callback for face detection processing
-        Task { @MainActor in
-            onFrameCaptured?(sampleBuffer)
+    nonisolated func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        // Convert to UIImage on the capture thread (CMSampleBuffer is not Sendable)
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+        let image = UIImage(cgImage: cgImage)
+        
+        // Pass the Sendable UIImage to main actor
+        Task { @MainActor [weak self] in
+            self?.onImageCaptured?(image)
         }
     }
 }
