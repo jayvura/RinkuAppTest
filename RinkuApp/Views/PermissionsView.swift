@@ -1,18 +1,28 @@
 import SwiftUI
 import AVFoundation
+import CoreBluetooth
+import Combine
 
 struct PermissionsView: View {
     @ObservedObject var store: AppStore
     @ObservedObject var cameraManager: CameraManager
     var onComplete: () -> Void
+    var showBluetoothPermission: Bool = false  // Show Bluetooth permission for glasses setup
 
     @State private var cameraGranted = false
     @State private var microphoneGranted = false
+    @State private var bluetoothGranted = false
     @State private var isRequestingCamera = false
     @State private var isRequestingMicrophone = false
+    @State private var isRequestingBluetooth = false
+    @StateObject private var bluetoothManager = BluetoothPermissionManager()
 
     private var allGranted: Bool {
-        cameraGranted && microphoneGranted
+        let basePermissions = cameraGranted && microphoneGranted
+        if showBluetoothPermission {
+            return basePermissions && bluetoothGranted
+        }
+        return basePermissions
     }
 
     var body: some View {
@@ -65,6 +75,19 @@ struct PermissionsView: View {
                 ) {
                     requestMicrophonePermission()
                 }
+                
+                // Bluetooth Permission (for glasses)
+                if showBluetoothPermission {
+                    PermissionCard(
+                        icon: "antenna.radiowaves.left.and.right",
+                        title: "Bluetooth Access",
+                        description: "Required to connect to Meta smart glasses for hands-free face recognition.",
+                        isGranted: bluetoothGranted,
+                        isLoading: isRequestingBluetooth
+                    ) {
+                        requestBluetoothPermission()
+                    }
+                }
             }
             .padding(.horizontal, 16)
 
@@ -107,6 +130,11 @@ struct PermissionsView: View {
         // Check microphone
         let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         microphoneGranted = micStatus == .authorized
+        
+        // Check Bluetooth (if needed)
+        if showBluetoothPermission {
+            bluetoothGranted = bluetoothManager.isAuthorized
+        }
     }
 
     private func requestCameraPermission() {
@@ -158,6 +186,16 @@ struct PermissionsView: View {
             openSettings()
         @unknown default:
             break
+        }
+    }
+    
+    private func requestBluetoothPermission() {
+        isRequestingBluetooth = true
+        bluetoothManager.requestAuthorization { granted in
+            DispatchQueue.main.async {
+                bluetoothGranted = granted
+                isRequestingBluetooth = false
+            }
         }
     }
 
@@ -233,8 +271,61 @@ struct PermissionCard: View {
     }
 }
 
+// MARK: - Bluetooth Permission Manager
+
+/// Helper class to manage Bluetooth authorization
+class BluetoothPermissionManager: NSObject, ObservableObject, CBCentralManagerDelegate {
+    private var centralManager: CBCentralManager?
+    private var authorizationCallback: ((Bool) -> Void)?
+    
+    @Published var isAuthorized: Bool = false
+    
+    override init() {
+        super.init()
+        checkCurrentAuthorization()
+    }
+    
+    private func checkCurrentAuthorization() {
+        switch CBCentralManager.authorization {
+        case .allowedAlways:
+            isAuthorized = true
+        case .notDetermined, .restricted, .denied:
+            isAuthorized = false
+        @unknown default:
+            isAuthorized = false
+        }
+    }
+    
+    func requestAuthorization(completion: @escaping (Bool) -> Void) {
+        authorizationCallback = completion
+        
+        // Creating a CBCentralManager triggers the permission dialog if not determined
+        centralManager = CBCentralManager(delegate: self, queue: nil, options: [
+            CBCentralManagerOptionShowPowerAlertKey: false
+        ])
+    }
+    
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        let authorized = CBCentralManager.authorization == .allowedAlways
+        DispatchQueue.main.async {
+            self.isAuthorized = authorized
+            self.authorizationCallback?(authorized)
+            self.authorizationCallback = nil
+        }
+    }
+}
+
 #Preview {
     PermissionsView(store: AppStore.shared, cameraManager: CameraManager()) {
         print("Permissions complete")
     }
+}
+
+#Preview("With Bluetooth") {
+    PermissionsView(
+        store: AppStore.shared,
+        cameraManager: CameraManager(),
+        onComplete: { print("Permissions complete") },
+        showBluetoothPermission: true
+    )
 }

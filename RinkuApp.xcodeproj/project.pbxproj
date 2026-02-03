@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F910EB372F31B41100C7FC25 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = F910EB362F31B41100C7FC25 /* MWDATCamera */; };
+		F910EB392F31B41100C7FC25 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = F910EB382F31B41100C7FC25 /* MWDATCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		F910E83F2F30501F00C7FC25 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F910EB372F31B41100C7FC25 /* MWDATCamera in Frameworks */,
+				F910EB392F31B41100C7FC25 /* MWDATCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +85,7 @@
 				F910E8332F30501E00C7FC25 /* RinkuApp */,
 				F910E8412F30501F00C7FC25 /* RinkuAppTests */,
 				F910E84B2F30501F00C7FC25 /* RinkuAppUITests */,
+				F910EB352F31B41100C7FC25 /* Frameworks */,
 				F910E8322F30501E00C7FC25 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +98,13 @@
 				F910E8482F30501F00C7FC25 /* RinkuAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F910EB352F31B41100C7FC25 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +127,8 @@
 			);
 			name = RinkuApp;
 			packageProductDependencies = (
+				F910EB362F31B41100C7FC25 /* MWDATCamera */,
+				F910EB382F31B41100C7FC25 /* MWDATCore */,
 			);
 			productName = RinkuApp;
 			productReference = F910E8312F30501E00C7FC25 /* RinkuApp.app */;
@@ -195,6 +212,9 @@
 			);
 			mainGroup = F910E8282F30501D00C7FC25;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				F910EA4A2F31B11600C7FC25 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F910E8322F30501E00C7FC25 /* Products */;
 			projectDirPath = "";
@@ -397,9 +417,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Rinku AI needs camera access to recognize faces of your loved ones and help you remember who they are.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Rinku AI needs microphone access to play voice reminders about your loved ones.";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -443,9 +462,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Rinku AI needs camera access to recognize faces of your loved ones and help you remember who they are.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Rinku AI needs microphone access to play voice reminders about your loved ones.";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -619,6 +637,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F910EA4A2F31B11600C7FC25 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F910EB362F31B41100C7FC25 /* MWDATCamera */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F910EA4A2F31B11600C7FC25 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCamera;
+		};
+		F910EB382F31B41100C7FC25 /* MWDATCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F910EA4A2F31B11600C7FC25 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F910E8292F30501E00C7FC25 /* Project object */;
 }

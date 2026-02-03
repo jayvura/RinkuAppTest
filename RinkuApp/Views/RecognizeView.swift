@@ -9,6 +9,9 @@ struct RecognizeView: View {
     @StateObject private var faceDetectionManager = FaceDetectionManager()
     @ObservedObject private var historyService = RecognitionHistoryService.shared
     @ObservedObject private var offlineCache = OfflineFaceCache.shared
+    @StateObject private var cameraSourceManager = CameraSourceManager.shared
+    @ObservedObject private var wearablesService = WearablesService.shared
+    @ObservedObject private var glassesCameraManager = GlassesCameraManager.shared
 
     @State private var showPermissions = false
     @State private var status: RecognitionStatus = .idle
@@ -20,25 +23,51 @@ struct RecognizeView: View {
     @State private var lastCapturedImage: UIImage?
     @State private var isAWSConfigured = AWSConfig.isConfigured
     @State private var wasOfflineRecognition = false
+    @State private var showGlassesSettings = false
 
     var body: some View {
         ZStack(alignment: .top) {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Header
+                    // Header with Camera Source Toggle
                     HStack {
                         Text("Recognize")
                             .font(.system(size: Theme.FontSize.h1, weight: .bold))
                             .foregroundColor(Theme.Colors.textPrimary)
                         Spacer()
+                        
+                        // Camera Source Toggle
+                        CameraSourceToggle(
+                            selectedSource: $cameraSourceManager.selectedSource,
+                            isGlassesConnected: wearablesService.registrationState.isConnected,
+                            onGlassesSetup: { showGlassesSettings = true }
+                        )
+                    }
+                    
+                    // Camera Source Status
+                    if cameraSourceManager.activeSource == .glasses || cameraSourceManager.selectedSource == .glasses {
+                        CameraSourceStatusBar(
+                            activeSource: cameraSourceManager.activeSource,
+                            statusMessage: cameraSourceManager.statusMessage,
+                            isGlassesConnected: wearablesService.registrationState.isConnected
+                        )
                     }
 
                     // Camera View with face detection overlay
-                    CameraFrameView(
-                        cameraManager: cameraManager,
-                        faceDetectionManager: faceDetectionManager,
-                        statusMessage: autoStatusMessage
-                    )
+                    // Shows either phone camera or glasses stream based on active source
+                    if cameraSourceManager.activeSource == .glasses && glassesCameraManager.currentVideoFrame != nil {
+                        GlassesCameraFrameView(
+                            image: glassesCameraManager.currentVideoFrame,
+                            faceDetectionManager: faceDetectionManager,
+                            statusMessage: autoStatusMessage
+                        )
+                    } else {
+                        CameraFrameView(
+                            cameraManager: cameraManager,
+                            faceDetectionManager: faceDetectionManager,
+                            statusMessage: autoStatusMessage
+                        )
+                    }
 
                     // Status Bar
                     HStack {
@@ -192,9 +221,23 @@ struct RecognizeView: View {
                 startCamera()
             }
         }
+        .sheet(isPresented: $showGlassesSettings) {
+            GlassesSettingsView()
+        }
         .onChange(of: cameraManager.isSessionRunning) { _, isRunning in
             if isRunning {
                 setupFrameCapture()
+            }
+        }
+        .onChange(of: glassesCameraManager.isStreaming) { _, isStreaming in
+            if isStreaming {
+                setupFrameCapture()
+            }
+        }
+        .onChange(of: cameraSourceManager.selectedSource) { oldSource, newSource in
+            // Only handle if the source actually changed and we're running
+            if oldSource != newSource && (cameraManager.isSessionRunning || glassesCameraManager.isStreaming) {
+                handleCameraSourceChange(from: oldSource, to: newSource)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: status)
@@ -240,8 +283,6 @@ struct RecognizeView: View {
 
     private func startCamera() {
         status = .loading
-        cameraManager.configureSession()
-        cameraManager.startSession()
         
         // Check AWS configuration
         isAWSConfigured = AWSConfig.isConfigured
@@ -249,7 +290,21 @@ struct RecognizeView: View {
         // Enable auto-recognition only if AWS is configured
         faceDetectionManager.isAutoRecognitionEnabled = isAWSConfigured
         
-        status = .enrolled
+        // Determine which camera to use
+        if cameraSourceManager.selectedSource == .glasses && wearablesService.registrationState.isConnected {
+            // Use glasses camera
+            Task {
+                await glassesCameraManager.startStreaming()
+                await MainActor.run {
+                    status = .enrolled
+                }
+            }
+        } else {
+            // Use phone camera (default)
+            cameraManager.configureSession()
+            cameraManager.startSession()
+            status = .enrolled
+        }
     }
 
     private func setupFrameCapture() {
@@ -260,7 +315,7 @@ struct RecognizeView: View {
             }
         }
         
-        // Capture frames for face detection and recognition
+        // Set up phone camera frame callback
         cameraManager.onFrameCaptured = { buffer in
             // Store the latest image for manual recognition
             if let image = buffer.toUIImage() {
@@ -269,6 +324,45 @@ struct RecognizeView: View {
             
             // Process frame for face detection (auto mode)
             self.faceDetectionManager.processFrame(buffer)
+        }
+        
+        // Set up glasses frame callback
+        glassesCameraManager.onFrameCaptured = { image in
+            // Store the latest image
+            self.lastCapturedImage = image
+            
+            // Process for face detection
+            self.faceDetectionManager.processImage(image)
+        }
+    }
+    
+    private func handleCameraSourceChange(from oldSource: CameraSource, to newSource: CameraSource) {
+        print("[RecognizeView] Camera source changed from \(oldSource) to \(newSource)")
+        
+        // Reset face detection state
+        faceDetectionManager.reset()
+        
+        // Handle camera switching
+        Task {
+            // Stop old camera
+            if oldSource == .glasses {
+                await glassesCameraManager.stopStreaming()
+            } else {
+                cameraManager.stopSession()
+            }
+            
+            // Start new camera
+            if newSource == .glasses && wearablesService.registrationState.isConnected {
+                await glassesCameraManager.startStreaming()
+                toastMessage = "Switched to glasses camera"
+            } else {
+                cameraManager.configureSession()
+                cameraManager.startSession()
+                toastMessage = "Switched to phone camera"
+            }
+            
+            toastType = .info
+            showToast = true
         }
     }
     
@@ -632,6 +726,217 @@ struct RecognitionResultCard: View {
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
                 .stroke(wasOffline ? Color.orange : Theme.Colors.border, lineWidth: wasOffline ? 2 : 1)
         )
+    }
+}
+
+// MARK: - Camera Source Toggle
+
+struct CameraSourceToggle: View {
+    @Binding var selectedSource: CameraSource
+    let isGlassesConnected: Bool
+    let onGlassesSetup: () -> Void
+    
+    var body: some View {
+        Menu {
+            ForEach(CameraSource.allCases) { source in
+                Button {
+                    if source == .glasses && !isGlassesConnected {
+                        onGlassesSetup()
+                    } else {
+                        selectedSource = source
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: source.icon)
+                        Text(source.rawValue)
+                        if selectedSource == source {
+                            Image(systemName: "checkmark")
+                        }
+                        if source == .glasses && !isGlassesConnected {
+                            Text("(Setup)")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: selectedSource.icon)
+                    .font(.system(size: 14))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundColor(Theme.Colors.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Theme.Colors.primaryLight)
+            .cornerRadius(16)
+        }
+    }
+}
+
+// MARK: - Camera Source Status Bar
+
+struct CameraSourceStatusBar: View {
+    let activeSource: CameraSource
+    let statusMessage: String
+    let isGlassesConnected: Bool
+    
+    private var statusColor: Color {
+        if activeSource == .glasses && isGlassesConnected {
+            return Theme.Colors.success
+        }
+        return Theme.Colors.primary
+    }
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: activeSource == .glasses ? "eyeglasses" : "iphone")
+                .font(.system(size: 14))
+                .foregroundColor(statusColor)
+            
+            Text(statusMessage)
+                .font(.system(size: Theme.FontSize.caption))
+                .foregroundColor(Theme.Colors.textSecondary)
+            
+            Spacer()
+            
+            if activeSource == .glasses {
+                Circle()
+                    .fill(isGlassesConnected ? Theme.Colors.success : Theme.Colors.warning)
+                    .frame(width: 8, height: 8)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(statusColor.opacity(0.1))
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - Glasses Camera Frame View
+
+struct GlassesCameraFrameView: View {
+    let image: UIImage?
+    @ObservedObject var faceDetectionManager: FaceDetectionManager
+    var statusMessage: String?
+    
+    var body: some View {
+        ZStack {
+            // Video frame from glasses
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(height: 400)
+                    .clipped()
+            } else {
+                // Placeholder when no frame
+                Rectangle()
+                    .fill(Color.black.opacity(0.8))
+                    .frame(height: 400)
+                    .overlay(
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Connecting to glasses...")
+                                .font(.system(size: Theme.FontSize.caption))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    )
+            }
+            
+            // Face detection overlay
+            if faceDetectionManager.hasFace {
+                FaceDetectionOverlay(
+                    faceDetectionManager: faceDetectionManager
+                )
+            }
+            
+            // Status message overlay
+            if let message = statusMessage {
+                VStack {
+                    Spacer()
+                    Text(message)
+                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(20)
+                        .padding(.bottom, 16)
+                }
+            }
+            
+            // Glasses indicator
+            VStack {
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "eyeglasses")
+                            .font(.system(size: 12))
+                        Text("GLASSES")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Theme.Colors.primary)
+                    .cornerRadius(4)
+                    
+                    Spacer()
+                }
+                .padding(12)
+                
+                Spacer()
+            }
+        }
+        .cornerRadius(Theme.CornerRadius.large)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.large)
+                .stroke(Theme.Colors.primary, lineWidth: 2)
+        )
+    }
+}
+
+// MARK: - Face Detection Overlay (extracted for reuse)
+
+struct FaceDetectionOverlay: View {
+    @ObservedObject var faceDetectionManager: FaceDetectionManager
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ForEach(Array(faceDetectionManager.detectedFaces.enumerated()), id: \.offset) { index, faceBoundingBox in
+                let rect = convertBoundingBox(faceBoundingBox, in: geometry.size)
+                
+                Rectangle()
+                    .stroke(faceDetectionManager.faceStabilityProgress >= 1.0 ? Theme.Colors.success : Theme.Colors.primary, lineWidth: 3)
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
+            }
+            
+            // Progress indicator
+            if faceDetectionManager.hasFace && faceDetectionManager.faceStabilityProgress < 1.0 {
+                VStack {
+                    Spacer()
+                    ProgressView(value: faceDetectionManager.faceStabilityProgress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: Theme.Colors.primary))
+                        .frame(width: 100)
+                        .padding(.bottom, 40)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+    
+    private func convertBoundingBox(_ boundingBox: CGRect, in size: CGSize) -> CGRect {
+        // Vision coordinates are normalized with origin at bottom-left
+        // Convert to UIKit coordinates with origin at top-left
+        let x = boundingBox.minX * size.width
+        let y = (1 - boundingBox.maxY) * size.height
+        let width = boundingBox.width * size.width
+        let height = boundingBox.height * size.height
+        
+        return CGRect(x: x, y: y, width: width, height: height)
     }
 }
 

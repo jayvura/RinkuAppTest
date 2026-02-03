@@ -91,6 +91,68 @@ final class FaceDetectionManager: ObservableObject {
         }
     }
     
+    /// Process a UIImage directly for face detection (used for glasses camera)
+    func processImage(_ image: UIImage) {
+        // Skip if in cooldown
+        if let lastRecognition = lastRecognitionTime,
+           Date().timeIntervalSince(lastRecognition) < recognitionCooldown {
+            return
+        }
+        
+        // Skip if already recognizing
+        guard !isRecognizing else { return }
+        
+        // Run face detection on the image
+        detectionQueue.async { [weak self] in
+            self?.detectFacesInImage(image)
+        }
+    }
+    
+    private func detectFacesInImage(_ image: UIImage) {
+        guard let cgImage = image.cgImage else {
+            DispatchQueue.main.async {
+                self.handleNoFace()
+            }
+            return
+        }
+        
+        let minConfidence = self.minimumConfidence
+        
+        // Use landmarks request to get yaw/roll for quality analysis
+        let request = VNDetectFaceLandmarksRequest { [weak self] request, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Face detection error: \(error)")
+                DispatchQueue.main.async {
+                    self.handleNoFace()
+                }
+                return
+            }
+            
+            guard let results = request.results as? [VNFaceObservation] else {
+                DispatchQueue.main.async {
+                    self.handleNoFace()
+                }
+                return
+            }
+            
+            // Filter by confidence
+            let confidentFaces = results.filter { $0.confidence >= minConfidence }
+            
+            DispatchQueue.main.async {
+                if confidentFaces.isEmpty {
+                    self.handleNoFace()
+                } else {
+                    self.handleFacesDetected(confidentFaces, image: image)
+                }
+            }
+        }
+        
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        try? handler.perform([request])
+    }
+    
     /// Reset state (call when view disappears)
     func reset() {
         detectedFaces = []

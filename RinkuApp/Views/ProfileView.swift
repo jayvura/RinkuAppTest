@@ -8,11 +8,13 @@ struct ProfileView: View {
     @ObservedObject private var offlineCache = OfflineFaceCache.shared
     @ObservedObject private var onboardingManager = OnboardingManager.shared
     @ObservedObject private var familyService = FamilyService.shared
+    @ObservedObject private var wearablesService = WearablesService.shared
     
     @State private var showAuthSheet = false
     @State private var showSignOutAlert = false
     @State private var showFullHistory = false
     @State private var showFamilyView = false
+    @State private var showGlassesSettings = false
     
     private var userName: String {
         authService.currentUser?.fullName ?? authService.currentUser?.email ?? "Guest User"
@@ -114,6 +116,18 @@ struct ProfileView: View {
                             }
                         }
                     }
+                }
+                
+                // Smart Glasses Section
+                VStack(spacing: 12) {
+                    ProfileSectionHeader(title: "Smart Glasses")
+                    
+                    GlassesConnectionItem(
+                        registrationState: wearablesService.registrationState,
+                        isSDKConfigured: wearablesService.isSDKConfigured,
+                        onTap: { showGlassesSettings = true },
+                        onConnect: { wearablesService.connectGlasses() }
+                    )
                 }
                 
                 // Settings Section
@@ -266,6 +280,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showFamilyView) {
             FamilyView(familyService: familyService)
+        }
+        .sheet(isPresented: $showGlassesSettings) {
+            GlassesSettingsView()
         }
         .alert("Sign Out", isPresented: $showSignOutAlert) {
             Button("Cancel", role: .cancel) { }
@@ -820,6 +837,98 @@ struct RecognitionHistoryRow: View {
                 .foregroundColor(event.wasOffline ? .orange : Theme.Colors.success)
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Glasses Connection Item
+
+struct GlassesConnectionItem: View {
+    let registrationState: GlassesRegistrationState
+    let isSDKConfigured: Bool
+    let onTap: () -> Void
+    let onConnect: () -> Void
+    
+    private var statusColor: Color {
+        if !isSDKConfigured {
+            return Theme.Colors.textSecondary
+        }
+        switch registrationState {
+        case .registered:
+            return Theme.Colors.success
+        case .registering:
+            return Theme.Colors.warning
+        case .unregistered:
+            return Theme.Colors.textSecondary
+        }
+    }
+    
+    private var statusText: String {
+        if !isSDKConfigured {
+            return "SDK not installed"
+        }
+        return registrationState.displayText
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(Theme.Colors.primaryLight)
+                        .frame(width: 44, height: 44)
+                    
+                    Image(systemName: "eyeglasses")
+                        .font(.system(size: 20))
+                        .foregroundColor(Theme.Colors.primary)
+                }
+                
+                // Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Meta Smart Glasses")
+                        .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                        .foregroundColor(Theme.Colors.textPrimary)
+                    
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(statusColor)
+                            .frame(width: 6, height: 6)
+                        
+                        Text(statusText)
+                            .font(.system(size: Theme.FontSize.caption))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                    }
+                }
+                
+                Spacer()
+                
+                // Quick connect button or chevron
+                if !registrationState.isConnected && isSDKConfigured {
+                    Button {
+                        onConnect()
+                    } label: {
+                        Text("Connect")
+                            .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Theme.Colors.primary)
+                            .cornerRadius(14)
+                    }
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Theme.Colors.textSecondary)
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(Theme.CornerRadius.medium)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
+                    .stroke(registrationState.isConnected ? Theme.Colors.success.opacity(0.3) : Theme.Colors.border, lineWidth: 1)
+            )
+        }
     }
 }
 
