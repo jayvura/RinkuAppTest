@@ -1,8 +1,8 @@
 import Foundation
 import UIKit
+import Combine
 
 /// Manages storage and retrieval of recognition history
-@MainActor
 final class RecognitionHistoryService: ObservableObject {
     
     static let shared = RecognitionHistoryService()

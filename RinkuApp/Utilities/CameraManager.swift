@@ -1,6 +1,6 @@
 import AVFoundation
 import SwiftUI
-internal import Combine
+import Combine
 
 final class CameraManager: NSObject, ObservableObject {
     // Published properties must be updated on main thread

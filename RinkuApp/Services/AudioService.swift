@@ -1,32 +1,28 @@
 import Foundation
 import AVFoundation
+import Combine
 
 /// Service for text-to-speech audio reminders
-@MainActor
-final class AudioService: ObservableObject {
+final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     static let shared = AudioService()
     
     @Published var isSpeaking = false
     @Published var isEnabled = true
     
     private let synthesizer = AVSpeechSynthesizer()
-    private var delegate: SpeechDelegate?
     
     private let enabledKey = "audio_reminders_enabled"
     
-    private init() {
+    private override init() {
+        super.init()
+        
         // Load saved preference
         if UserDefaults.standard.object(forKey: enabledKey) != nil {
             isEnabled = UserDefaults.standard.bool(forKey: enabledKey)
         }
         
         // Set up delegate
-        delegate = SpeechDelegate { [weak self] in
-            Task { @MainActor in
-                self?.isSpeaking = false
-            }
-        }
-        synthesizer.delegate = delegate
+        synthesizer.delegate = self
         
         // Configure audio session for playback
         configureAudioSession()
@@ -99,7 +95,9 @@ final class AudioService: ObservableObject {
         utterance.preUtteranceDelay = 0.3
         utterance.postUtteranceDelay = 0.2
         
-        isSpeaking = true
+        DispatchQueue.main.async {
+            self.isSpeaking = true
+        }
         synthesizer.speak(utterance)
     }
     
@@ -108,24 +106,22 @@ final class AudioService: ObservableObject {
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
-        isSpeaking = false
+        DispatchQueue.main.async {
+            self.isSpeaking = false
+        }
     }
-}
-
-// MARK: - Speech Delegate
-
-private class SpeechDelegate: NSObject, AVSpeechSynthesizerDelegate {
-    let onFinish: () -> Void
     
-    init(onFinish: @escaping () -> Void) {
-        self.onFinish = onFinish
-    }
+    // MARK: - AVSpeechSynthesizerDelegate
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        onFinish()
+        DispatchQueue.main.async {
+            self.isSpeaking = false
+        }
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        onFinish()
+        DispatchQueue.main.async {
+            self.isSpeaking = false
+        }
     }
 }

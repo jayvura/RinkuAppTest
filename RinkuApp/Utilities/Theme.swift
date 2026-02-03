@@ -43,6 +43,7 @@ struct Theme {
     struct FontSize {
         static let caption: CGFloat = 13
         static let body: CGFloat = 16
+        static let h3: CGFloat = 18
         static let h2: CGFloat = 20
         static let h1: CGFloat = 28
     }

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 /// User session data
 struct UserSession: Codable {
@@ -79,6 +80,11 @@ final class AuthService: ObservableObject {
     private let sessionKey = "supabase_session"
     private var session: UserSession?
     
+    /// Get the current access token (may be expired, use getAccessToken() for fresh token)
+    var accessToken: String? {
+        session?.accessToken
+    }
+    
     private init() {
         loadStoredSession()
     }
@@ -128,6 +134,11 @@ final class AuthService: ObservableObject {
         error = nil
         defer { isLoading = false }
         
+        // Check if Supabase is configured
+        guard SupabaseConfig.isConfigured else {
+            throw AuthError.serverError("Supabase is not configured. Please add your credentials to Secrets.plist.")
+        }
+        
         let url = SupabaseConfig.authURL.appendingPathComponent("signup")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -147,12 +158,39 @@ final class AuthService: ObservableObject {
             throw AuthError.networkError
         }
         
+        // Debug: print the response for troubleshooting
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("📧 Signup response (\(httpResponse.statusCode)): \(responseString)")
+        }
+        
         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-            let authResponse = try parseAuthResponse(data)
-            saveSession(authResponse)
+            // Check if this is an email confirmation required response
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                // If no access_token, email confirmation is likely required
+                if json["access_token"] == nil {
+                    // Check if user was created - Supabase returns user data directly (with "id" at top level)
+                    // or wrapped in a "user" object
+                    if json["id"] != nil || (json["user"] as? [String: Any])?["id"] != nil {
+                        // Check for confirmation_sent_at to confirm email verification is needed
+                        if json["confirmation_sent_at"] != nil {
+                            throw AuthError.emailConfirmationRequired
+                        }
+                    }
+                }
+            }
+            
+            do {
+                let authResponse = try parseAuthResponse(data)
+                saveSession(authResponse)
+            } catch {
+                print("📧 Failed to parse auth response: \(error)")
+                // If we get here, account was likely created but needs email confirmation
+                throw AuthError.emailConfirmationRequired
+            }
         } else {
             let errorResponse = try? JSONDecoder().decode(AuthErrorResponse.self, from: data)
-            throw AuthError.serverError(errorResponse?.message ?? "Sign up failed")
+            let message = errorResponse?.message ?? "Sign up failed (status: \(httpResponse.statusCode))"
+            throw AuthError.serverError(message)
         }
     }
     
@@ -161,6 +199,11 @@ final class AuthService: ObservableObject {
         isLoading = true
         error = nil
         defer { isLoading = false }
+        
+        // Check if Supabase is configured
+        guard SupabaseConfig.isConfigured else {
+            throw AuthError.serverError("Supabase is not configured. Please add your credentials to Secrets.plist.")
+        }
         
         let url = SupabaseConfig.authURL.appendingPathComponent("token")
         var request = URLRequest(url: url)
@@ -185,12 +228,18 @@ final class AuthService: ObservableObject {
             throw AuthError.networkError
         }
         
+        // Debug: print the response for troubleshooting
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("🔐 SignIn response (\(httpResponse.statusCode)): \(responseString)")
+        }
+        
         if httpResponse.statusCode == 200 {
             let authResponse = try parseAuthResponse(data)
             saveSession(authResponse)
         } else {
             let errorResponse = try? JSONDecoder().decode(AuthErrorResponse.self, from: data)
-            throw AuthError.serverError(errorResponse?.message ?? "Sign in failed")
+            let message = errorResponse?.message ?? "Sign in failed (status: \(httpResponse.statusCode))"
+            throw AuthError.serverError(message)
         }
     }
     
@@ -282,6 +331,7 @@ enum AuthError: Error, LocalizedError {
     case invalidResponse
     case serverError(String)
     case notAuthenticated
+    case emailConfirmationRequired
     
     var errorDescription: String? {
         switch self {
@@ -293,29 +343,39 @@ enum AuthError: Error, LocalizedError {
             return message
         case .notAuthenticated:
             return "You must be signed in to perform this action."
+        case .emailConfirmationRequired:
+            return "Please check your email to confirm your account, then sign in."
         }
     }
 }
 
-struct AuthErrorResponse: Codable {
+struct AuthErrorResponse: Decodable {
     let message: String
     let error: String?
+    let errorDescription: String?
     
     enum CodingKeys: String, CodingKey {
-        case message = "msg"
+        case msg
+        case message
         case error
+        case errorDescription = "error_description"
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Try different keys for the message
-        if let msg = try? container.decode(String.self, forKey: .message) {
+        // Try different keys for the message (Supabase returns various formats)
+        if let errorDesc = try? container.decode(String.self, forKey: .errorDescription) {
+            message = errorDesc
+        } else if let msg = try? container.decode(String.self, forKey: .msg) {
             message = msg
+        } else if let m = try? container.decode(String.self, forKey: .message) {
+            message = m
         } else if let err = try? container.decode(String.self, forKey: .error) {
             message = err
         } else {
             message = "Unknown error"
         }
         error = try? container.decodeIfPresent(String.self, forKey: .error)
+        errorDescription = try? container.decodeIfPresent(String.self, forKey: .errorDescription)
     }
 }
