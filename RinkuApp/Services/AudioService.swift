@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 import Combine
 
-/// Service for text-to-speech audio reminders
+/// Service for text-to-speech audio reminders with bilingual support
 final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     static let shared = AudioService()
     
@@ -10,6 +10,7 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     @Published var isEnabled = true
     
     private let synthesizer = AVSpeechSynthesizer()
+    private let languageManager = LanguageManager.shared
     
     private let enabledKey = "audio_reminders_enabled"
     
@@ -48,12 +49,13 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         }
     }
     
-    /// Speak a recognition reminder for a loved one
-    func speakRecognitionReminder(for lovedOne: LovedOne) {
+    /// Speak a recognition reminder for a loved one (uses current app language)
+    @MainActor func speakRecognitionReminder(for lovedOne: LovedOne) {
         guard isEnabled else { return }
         
-        // Build the reminder message
-        var message = "This is \(lovedOne.displayName), your \(lovedOne.relationship)."
+        // Build the reminder message using localized format
+        let introFormat = "tts_this_is".localized
+        var message = String(format: introFormat, lovedOne.displayName, lovedOne.relationship)
         
         if let memoryPrompt = lovedOne.memoryPrompt, !memoryPrompt.isEmpty {
             message += " \(memoryPrompt)"
@@ -62,8 +64,8 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         speak(message)
     }
     
-    /// Speak custom text
-    func speak(_ text: String) {
+    /// Speak custom text (uses current app language for voice)
+    @MainActor func speak(_ text: String) {
         guard isEnabled else { return }
         
         // Stop any current speech
@@ -86,8 +88,48 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
         
-        // Use a high-quality voice if available
-        if let voice = AVSpeechSynthesisVoice(language: "en-US") {
+        // Use the voice for the current app language
+        let voiceLanguage = LanguageManager.shared.currentLanguage.voiceLanguage
+        if let voice = AVSpeechSynthesisVoice(language: voiceLanguage) {
+            utterance.voice = voice
+        }
+        
+        // Add slight pauses for better comprehension
+        utterance.preUtteranceDelay = 0.3
+        utterance.postUtteranceDelay = 0.2
+        
+        DispatchQueue.main.async {
+            self.isSpeaking = true
+        }
+        synthesizer.speak(utterance)
+    }
+    
+    /// Speak text in a specific language (overrides app language)
+    func speak(_ text: String, in language: AppLanguage) {
+        guard isEnabled else { return }
+        
+        // Stop any current speech
+        if synthesizer.isSpeaking {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+        
+        // Activate audio session
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to activate audio session: \(error)")
+        }
+        
+        // Create utterance
+        let utterance = AVSpeechUtterance(string: text)
+        
+        // Configure voice settings for clarity
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.9
+        utterance.pitchMultiplier = 1.0
+        utterance.volume = 1.0
+        
+        // Use the specified language voice
+        if let voice = AVSpeechSynthesisVoice(language: language.voiceLanguage) {
             utterance.voice = voice
         }
         

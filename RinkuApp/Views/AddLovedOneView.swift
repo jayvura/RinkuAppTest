@@ -4,6 +4,7 @@ import PhotosUI
 struct AddLovedOneView: View {
     @ObservedObject var store: AppStore
     @Binding var selectedTab: TabItem
+    @ObservedObject private var languageManager = LanguageManager.shared
 
     @State private var fullName = ""
     @State private var familiarName = ""
@@ -177,7 +178,7 @@ struct AddLovedOneView: View {
                 VStack(spacing: 24) {
                     // Header
                     HStack {
-                        Text("Add Loved One")
+                        Text("add_loved_one_title".localized)
                             .font(.system(size: Theme.FontSize.h1, weight: .bold))
                             .foregroundColor(Theme.Colors.textPrimary)
                         Spacer()
@@ -186,7 +187,7 @@ struct AddLovedOneView: View {
                     // Photo Picker Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Photos")
+                            Text("add_loved_one_photos".localized)
                                 .font(.system(size: Theme.FontSize.body, weight: .medium))
                                 .foregroundColor(Theme.Colors.textPrimary)
 
@@ -242,7 +243,7 @@ struct AddLovedOneView: View {
                         ) {
                             HStack {
                                 Image(systemName: "photo.on.rectangle.angled")
-                                Text(selectedImages.isEmpty ? "Select Photos" : "Add More Photos")
+                                Text(selectedImages.isEmpty ? "add_loved_one_add_photos".localized : "add_loved_one_add_photos".localized)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -277,9 +278,9 @@ struct AddLovedOneView: View {
                     // Form
                     VStack(spacing: 20) {
                         RinkuTextField(
-                            label: "Full Name",
+                            label: "add_loved_one_full_name".localized,
                             text: $fullName,
-                            placeholder: "e.g., Gabriela Martinez",
+                            placeholder: "add_loved_one_full_name_placeholder".localized,
                             errorText: fullNameTouched ? fullNameError : nil,
                             isRequired: true
                         )
@@ -288,16 +289,15 @@ struct AddLovedOneView: View {
                         }
 
                         RinkuTextField(
-                            label: "Familiar Name",
+                            label: "add_loved_one_familiar_name".localized,
                             text: $familiarName,
-                            placeholder: "e.g., Gabi (optional)",
-                            helperText: "The name you usually call them"
+                            placeholder: "add_loved_one_familiar_name_placeholder".localized
                         )
 
                         RinkuTextField(
-                            label: "Relationship",
+                            label: "add_loved_one_relationship".localized,
                             text: $relationship,
-                            placeholder: "e.g., Daughter",
+                            placeholder: "add_loved_one_relationship_placeholder".localized,
                             errorText: relationshipTouched ? relationshipError : nil,
                             isRequired: true
                         )
@@ -306,10 +306,9 @@ struct AddLovedOneView: View {
                         }
 
                         RinkuTextField(
-                            label: "Memory Prompt",
+                            label: "add_loved_one_memory_prompt".localized,
                             text: $memoryPrompt,
-                            placeholder: "e.g., She loves painting and always brings flowers on Sundays.",
-                            helperText: "A gentle reminder about this person (optional)",
+                            placeholder: "add_loved_one_memory_prompt_placeholder".localized,
                             isMultiline: true
                         )
                     }
@@ -317,7 +316,7 @@ struct AddLovedOneView: View {
                     // Actions
                     VStack(spacing: 12) {
                         RinkuButton(
-                            title: "Save",
+                            title: "action_save".localized,
                             variant: .primary,
                             size: .large,
                             isLoading: isProcessingPhotos,
@@ -327,7 +326,7 @@ struct AddLovedOneView: View {
                         }
 
                         RinkuButton(
-                            title: "Cancel",
+                            title: "action_cancel".localized,
                             variant: .secondary,
                             size: .large,
                             isDisabled: isProcessingPhotos
@@ -357,6 +356,7 @@ struct AddLovedOneView: View {
                 }
             }
         }
+        .id(languageManager.currentLanguage) // Force refresh when language changes
     }
 
     private func loadSelectedPhotos(_ items: [PhotosPickerItem]) async {

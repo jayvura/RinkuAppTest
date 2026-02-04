@@ -3,6 +3,7 @@ import SwiftUI
 struct LovedOnesView: View {
     @ObservedObject var store: AppStore
     @Binding var selectedTab: TabItem
+    @ObservedObject private var languageManager = LanguageManager.shared
     @State private var searchQuery = ""
     @State private var selectedPerson: LovedOne? = nil
 
@@ -21,7 +22,7 @@ struct LovedOnesView: View {
             VStack(spacing: 24) {
                 // Header
                 HStack {
-                    Text("Loved Ones")
+                    Text("loved_ones_title".localized)
                         .font(.system(size: Theme.FontSize.h1, weight: .bold))
                         .foregroundColor(Theme.Colors.textPrimary)
                     Spacer()
@@ -31,9 +32,9 @@ struct LovedOnesView: View {
                     // Empty State
                     EmptyStateView(
                         icon: "person.fill.badge.plus",
-                        title: "No loved ones yet",
-                        message: "Add people you want to recognize. Include their name, relationship, and a memory prompt.",
-                        ctaLabel: "Add Loved One"
+                        title: "loved_ones_empty_title".localized,
+                        message: "loved_ones_empty_subtitle".localized,
+                        ctaLabel: "loved_ones_add_first".localized
                     ) {
                         selectedTab = .add
                     }
@@ -89,6 +90,7 @@ struct LovedOnesView: View {
                 LovedOneDetailView(store: store, lovedOne: currentPerson)
             }
         }
+        .id(languageManager.currentLanguage) // Force refresh when language changes
     }
 }
 
