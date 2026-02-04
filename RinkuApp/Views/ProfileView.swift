@@ -9,6 +9,7 @@ struct ProfileView: View {
     @ObservedObject private var onboardingManager = OnboardingManager.shared
     @ObservedObject private var familyService = FamilyService.shared
     @ObservedObject private var wearablesService = WearablesService.shared
+    @ObservedObject private var languageManager = LanguageManager.shared
     
     @State private var showAuthSheet = false
     @State private var showSignOutAlert = false
@@ -17,11 +18,11 @@ struct ProfileView: View {
     @State private var showGlassesSettings = false
     
     private var userName: String {
-        authService.currentUser?.fullName ?? authService.currentUser?.email ?? "Guest User"
+        authService.currentUser?.fullName ?? authService.currentUser?.email ?? "profile_guest_user".localized
     }
     
     private var userEmail: String {
-        authService.currentUser?.email ?? "Sign in to sync your data"
+        authService.currentUser?.email ?? "profile_sign_in_prompt".localized
     }
     
     var body: some View {
@@ -29,10 +30,13 @@ struct ProfileView: View {
             VStack(spacing: 24) {
                 // Header
                 HStack {
-                    Text("Profile")
+                    Text("profile_title".localized)
                         .font(.system(size: Theme.FontSize.h1, weight: .bold))
                         .foregroundColor(Theme.Colors.textPrimary)
                     Spacer()
+                    
+                    // Quick language toggle
+                    LanguageToggleButton()
                 }
                 
                 // Profile Card
@@ -48,12 +52,12 @@ struct ProfileView: View {
                 if !historyService.events.isEmpty {
                     VStack(spacing: 12) {
                         HStack {
-                            ProfileSectionHeader(title: "Recent Activity")
+                            ProfileSectionHeader(title: "section_recent_activity".localized)
                             Spacer()
                             Button {
                                 showFullHistory = true
                             } label: {
-                                Text("See All")
+                                Text("recognition_see_all".localized)
                                     .font(.system(size: Theme.FontSize.caption, weight: .medium))
                                     .foregroundColor(Theme.Colors.primary)
                             }
@@ -69,12 +73,12 @@ struct ProfileView: View {
                 // Account Section
                 if !authService.isSignedIn {
                     VStack(spacing: 12) {
-                        ProfileSectionHeader(title: "Account")
+                        ProfileSectionHeader(title: "section_account".localized)
                         
                         ProfileActionButton(
                             icon: "person.crop.circle.badge.plus",
-                            label: "Sign Up",
-                            subtitle: "Create an account to backup your data",
+                            label: "account_sign_up".localized,
+                            subtitle: "account_sign_up_subtitle".localized,
                             color: Theme.Colors.primary
                         ) {
                             showAuthSheet = true
@@ -82,8 +86,8 @@ struct ProfileView: View {
                         
                         ProfileActionButton(
                             icon: "arrow.right.circle.fill",
-                            label: "Sign In",
-                            subtitle: "Already have an account?",
+                            label: "account_sign_in".localized,
+                            subtitle: "account_sign_in_subtitle".localized,
                             color: Theme.Colors.success
                         ) {
                             showAuthSheet = true
@@ -94,7 +98,7 @@ struct ProfileView: View {
                 // Family Section (only show if signed in)
                 if authService.isSignedIn {
                     VStack(spacing: 12) {
-                        ProfileSectionHeader(title: "Family")
+                        ProfileSectionHeader(title: "section_family".localized)
                         
                         if let family = familyService.currentFamily {
                             // Show current family
@@ -108,8 +112,8 @@ struct ProfileView: View {
                             // Prompt to create or join
                             ProfileActionButton(
                                 icon: "person.3.fill",
-                                label: "Set Up Family Sharing",
-                                subtitle: "Share loved ones with caregivers",
+                                label: "family_setup".localized,
+                                subtitle: "family_setup_subtitle".localized,
                                 color: Theme.Colors.primary
                             ) {
                                 showFamilyView = true
@@ -120,7 +124,7 @@ struct ProfileView: View {
                 
                 // Smart Glasses Section
                 VStack(spacing: 12) {
-                    ProfileSectionHeader(title: "Smart Glasses")
+                    ProfileSectionHeader(title: "section_smart_glasses".localized)
                     
                     GlassesConnectionItem(
                         registrationState: wearablesService.registrationState,
@@ -132,7 +136,10 @@ struct ProfileView: View {
                 
                 // Settings Section
                 VStack(spacing: 12) {
-                    ProfileSectionHeader(title: "Settings")
+                    ProfileSectionHeader(title: "section_settings".localized)
+                    
+                    // Language Picker - prominently placed at top of settings
+                    LanguagePickerItem()
                     
                     // Audio Reminders Toggle
                     AudioToggleItem(
@@ -144,23 +151,23 @@ struct ProfileView: View {
                     
                     ProfileItem(
                         icon: "bell.fill",
-                        label: "Notifications",
+                        label: "settings_notifications".localized,
                         type: .toggle,
                         isEnabled: true
                     )
                     
                     ProfileItem(
                         icon: "camera.fill",
-                        label: "Camera Access",
-                        value: "Enabled",
+                        label: "settings_camera_access".localized,
+                        value: "settings_enabled".localized,
                         type: .info
                     )
                     
                     // Offline cache info
                     ProfileItem(
                         icon: "wifi.slash",
-                        label: "Offline Cache",
-                        value: "\(offlineCache.cachedFaces.count) faces cached",
+                        label: "settings_offline_cache".localized,
+                        value: "settings_faces_cached".localized(with: offlineCache.cachedFaces.count),
                         type: .info
                     )
                     
@@ -180,11 +187,11 @@ struct ProfileView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Replay Tutorial")
+                                Text("settings_replay_tutorial".localized)
                                     .font(.system(size: Theme.FontSize.body, weight: .medium))
                                     .foregroundColor(Theme.Colors.textPrimary)
                                 
-                                Text("View the welcome screens again")
+                                Text("settings_replay_subtitle".localized)
                                     .font(.system(size: Theme.FontSize.caption))
                                     .foregroundColor(Theme.Colors.textSecondary)
                             }
@@ -207,29 +214,29 @@ struct ProfileView: View {
                 
                 // Support Section
                 VStack(spacing: 12) {
-                    ProfileSectionHeader(title: "Support")
+                    ProfileSectionHeader(title: "section_support".localized)
                     
                     ProfileItem(
                         icon: "shield.fill",
-                        label: "Privacy Policy",
+                        label: "support_privacy_policy".localized,
                         type: .link
                     )
                     
                     ProfileItem(
                         icon: "doc.text.fill",
-                        label: "Terms of Service",
+                        label: "support_terms".localized,
                         type: .link
                     )
                     
                     ProfileItem(
                         icon: "questionmark.circle.fill",
-                        label: "Help & FAQ",
+                        label: "support_help".localized,
                         type: .link
                     )
                     
                     ProfileItem(
                         icon: "envelope.fill",
-                        label: "Contact Support",
+                        label: "support_contact".localized,
                         type: .link
                     )
                 }
@@ -241,7 +248,7 @@ struct ProfileView: View {
                     } label: {
                         HStack {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Sign Out")
+                            Text("account_sign_out".localized)
                         }
                         .font(.system(size: Theme.FontSize.body, weight: .medium))
                         .foregroundColor(Theme.Colors.danger)
@@ -255,11 +262,11 @@ struct ProfileView: View {
                 
                 // App Info
                 VStack(spacing: 4) {
-                    Text("Rinku AI v1.0.0")
+                    Text("app_version".localized)
                         .font(.system(size: Theme.FontSize.caption))
                         .foregroundColor(Theme.Colors.textSecondary)
                     
-                    Text("A gentle memory companion for those living with Alzheimer's")
+                    Text("app_description".localized)
                         .font(.system(size: Theme.FontSize.caption))
                         .foregroundColor(Theme.Colors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -284,16 +291,17 @@ struct ProfileView: View {
         .sheet(isPresented: $showGlassesSettings) {
             GlassesSettingsView()
         }
-        .alert("Sign Out", isPresented: $showSignOutAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Sign Out", role: .destructive) {
+        .alert("account_sign_out".localized, isPresented: $showSignOutAlert) {
+            Button("action_cancel".localized, role: .cancel) { }
+            Button("account_sign_out".localized, role: .destructive) {
                 Task {
                     await authService.signOut()
                 }
             }
         } message: {
-            Text("Are you sure you want to sign out? Your data will remain on this device.")
+            Text("account_sign_out_confirm".localized)
         }
+        .id(languageManager.currentLanguage) // Force refresh when language changes
     }
 }
 
@@ -517,11 +525,11 @@ struct AudioToggleItem: View {
             
             // Label and description
             VStack(alignment: .leading, spacing: 2) {
-                Text("Audio Reminders")
+                Text("settings_audio_reminders".localized)
                     .font(.system(size: Theme.FontSize.body, weight: .medium))
                     .foregroundColor(Theme.Colors.textPrimary)
                 
-                Text(isEnabled ? "Speaks name and memory prompt" : "Audio disabled")
+                Text(isEnabled ? "settings_audio_enabled".localized : "settings_audio_disabled".localized)
                     .font(.system(size: Theme.FontSize.caption))
                     .foregroundColor(Theme.Colors.textSecondary)
             }

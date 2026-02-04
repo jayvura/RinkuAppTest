@@ -10,15 +10,15 @@ enum TabItem: Int, CaseIterable {
     var title: String {
         switch self {
         case .home:
-            return "Home"
+            return "tab_home".localized
         case .lovedOnes:
-            return "Loved Ones"
+            return "tab_loved_ones".localized
         case .add:
-            return "Add"
+            return "tab_add".localized
         case .recognize:
-            return "Recognize"
+            return "tab_recognize".localized
         case .profile:
-            return "Profile"
+            return "tab_profile".localized
         }
     }
 
@@ -40,6 +40,7 @@ enum TabItem: Int, CaseIterable {
 
 struct TabBar: View {
     @Binding var selectedTab: TabItem
+    @ObservedObject private var languageManager = LanguageManager.shared
 
     var body: some View {
         HStack {
@@ -60,6 +61,7 @@ struct TabBar: View {
                 .foregroundColor(Theme.Colors.border),
             alignment: .top
         )
+        .id(languageManager.currentLanguage) // Force refresh when language changes
     }
 }
 

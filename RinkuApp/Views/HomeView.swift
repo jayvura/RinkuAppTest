@@ -2,17 +2,18 @@ import SwiftUI
 
 struct HomeView: View {
     @Binding var selectedTab: TabItem
+    @ObservedObject private var languageManager = LanguageManager.shared
 
     var body: some View {
         ScrollView {
             VStack(spacing: 32) {
                 // Header
                 VStack(spacing: 8) {
-                    Text("Rinku AI")
+                    Text("app_name".localized)
                         .font(.system(size: Theme.FontSize.h1, weight: .bold))
                         .foregroundColor(Theme.Colors.primary)
 
-                    Text("A gentle memory companion.")
+                    Text("app_tagline".localized)
                         .font(.system(size: Theme.FontSize.body))
                         .foregroundColor(Theme.Colors.textSecondary)
                 }
@@ -21,7 +22,7 @@ struct HomeView: View {
                 // Main CTAs
                 VStack(spacing: 16) {
                     RinkuButton(
-                        title: "Loved Ones",
+                        title: "home_loved_ones_button".localized,
                         icon: "person.2.fill",
                         variant: .primary,
                         size: .large
@@ -30,7 +31,7 @@ struct HomeView: View {
                     }
 
                     RinkuButton(
-                        title: "Add Loved One",
+                        title: "home_add_button".localized,
                         icon: "person.fill.badge.plus",
                         variant: .secondary,
                         size: .large
@@ -39,7 +40,7 @@ struct HomeView: View {
                     }
 
                     RinkuButton(
-                        title: "Recognize",
+                        title: "home_recognize_button".localized,
                         icon: "camera.fill",
                         variant: .primary,
                         size: .large
@@ -50,7 +51,7 @@ struct HomeView: View {
 
                 // Info Card
                 VStack {
-                    Text("Use the camera to recognize loved ones and hear gentle reminders about your relationship.")
+                    Text("home_info_card".localized)
                         .font(.system(size: Theme.FontSize.body))
                         .foregroundColor(Theme.Colors.primaryDark)
                         .multilineTextAlignment(.center)
@@ -64,6 +65,7 @@ struct HomeView: View {
             .padding(.horizontal, 16)
         }
         .background(Theme.Colors.background)
+        .id(languageManager.currentLanguage) // Force refresh when language changes
     }
 }
 
