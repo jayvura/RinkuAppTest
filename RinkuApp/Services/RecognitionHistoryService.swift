@@ -26,15 +26,77 @@ final class RecognitionHistoryService: ObservableObject {
     // MARK: - Private
     
     private let fileManager = FileManager.default
+    private var currentUserId: String?
+    
+    /// Get the history URL for the current user (or a default for guests)
     private var historyURL: URL {
         let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return documentsPath.appendingPathComponent("recognition_history.json")
+        let fileName: String
+        if let userId = currentUserId {
+            fileName = "recognition_history_\(userId).json"
+        } else {
+            fileName = "recognition_history_guest.json"
+        }
+        return documentsPath.appendingPathComponent(fileName)
     }
     
     // MARK: - Initialization
     
     private init() {
+        // Subscribe to auth changes
+        setupAuthObserver()
+        
+        // Load history for current user if already signed in
+        loadForCurrentUser()
+    }
+    
+    /// Set up observer for auth state changes
+    private func setupAuthObserver() {
+        // Listen for sign-in/sign-out notifications
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserChanged),
+            name: .userSessionDidChange,
+            object: nil
+        )
+    }
+    
+    /// Load history for the currently signed-in user (if any)
+    private func loadForCurrentUser() {
+        // Access AuthService to check current user
+        // Using UserDefaults to check session since AuthService is MainActor
+        if let data = UserDefaults.standard.data(forKey: "supabase_session"),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let userJson = json["user"] as? [String: Any],
+           let userId = userJson["id"] as? String {
+            print("📜 Loading history for existing user: \(userId)")
+            currentUserId = userId
+            loadHistory()
+        }
+    }
+    
+    @objc private func handleUserChanged(_ notification: Notification) {
+        if let userId = notification.userInfo?["userId"] as? String {
+            loadHistoryForUser(userId)
+        } else {
+            // User signed out
+            handleSignOut()
+        }
+    }
+    
+    /// Load history for a specific user (call when user signs in)
+    func loadHistoryForUser(_ userId: String) {
+        print("📜 Loading recognition history for user: \(userId)")
+        currentUserId = userId
+        events = []
         loadHistory()
+    }
+    
+    /// Handle user sign out
+    func handleSignOut() {
+        print("📜 Clearing recognition history for signed out user")
+        currentUserId = nil
+        events = []
     }
     
     // MARK: - Public Methods

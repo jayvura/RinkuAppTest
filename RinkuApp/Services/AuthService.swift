@@ -117,13 +117,30 @@ final class AuthService: ObservableObject {
         if let data = try? JSONEncoder().encode(session) {
             UserDefaults.standard.set(data, forKey: sessionKey)
         }
+        
+        // Notify that user has signed in
+        NotificationCenter.default.post(
+            name: .userSessionDidChange,
+            object: nil,
+            userInfo: ["userId": session.user.id]
+        )
+        print("🔐 User session saved for: \(session.user.id)")
     }
     
     private func clearSession() {
+        let previousUserId = session?.user.id
         session = nil
         currentUser = nil
         isSignedIn = false
         UserDefaults.standard.removeObject(forKey: sessionKey)
+        
+        // Notify that user has signed out
+        NotificationCenter.default.post(
+            name: .userSessionDidChange,
+            object: nil,
+            userInfo: [:]
+        )
+        print("🔐 User session cleared (was: \(previousUserId ?? "none"))")
     }
     
     // MARK: - Auth Actions
@@ -347,6 +364,14 @@ enum AuthError: Error, LocalizedError {
             return "Please check your email to confirm your account, then sign in."
         }
     }
+}
+
+// MARK: - Notifications
+
+extension Notification.Name {
+    /// Posted when user session changes (sign in or sign out)
+    /// userInfo: ["userId": String] for sign in, empty for sign out
+    static let userSessionDidChange = Notification.Name("userSessionDidChange")
 }
 
 struct AuthErrorResponse: Decodable {

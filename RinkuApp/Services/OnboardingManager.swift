@@ -30,6 +30,27 @@ final class OnboardingManager: ObservableObject {
     
     private init() {
         self.hasSeenWelcome = UserDefaults.standard.bool(forKey: hasSeenWelcomeKey)
+        setupAuthObserver()
+    }
+    
+    /// Set up observer for auth state changes
+    private func setupAuthObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUserSessionChanged),
+            name: .userSessionDidChange,
+            object: nil
+        )
+    }
+    
+    @objc private func handleUserSessionChanged(_ notification: Notification) {
+        if let userId = notification.userInfo?["userId"] as? String {
+            // User signed in - check their setup status
+            checkSetupStatus(for: userId)
+        } else {
+            // User signed out
+            handleSignOut()
+        }
     }
     
     /// Call when user signs in to check their setup status
