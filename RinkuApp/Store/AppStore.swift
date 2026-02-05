@@ -13,16 +13,27 @@ final class AppStore: ObservableObject {
     @Published var isSyncing = false
     @Published var syncError: String?
 
-    private let storageKey = "loved_ones_data"
+    private let storageKeyPrefix = "loved_ones_data_"  // Per-user storage
     private let authService = AuthService.shared
     private let supabaseService = SupabaseService.shared
     private let familyService = FamilyService.shared
     private var cancellables = Set<AnyCancellable>()
+    
+    /// Get the storage key for the current user (or a default for guests)
+    private var currentStorageKey: String {
+        if let userId = authService.currentUser?.id {
+            return storageKeyPrefix + userId
+        }
+        return storageKeyPrefix + "guest"
+    }
 
     private init() {
-        loadLovedOnes()
         setupAuthObserver()
         setupFamilyObserver()
+        // Load initial data if already signed in
+        if authService.isSignedIn {
+            loadLovedOnes()
+        }
     }
     
     // MARK: - Auth Observer
@@ -34,13 +45,37 @@ final class AppStore: ObservableObject {
             .sink { [weak self] isSignedIn in
                 Task { @MainActor in
                     if isSignedIn {
+                        // Clear previous user's data and load new user's data
+                        self?.clearLocalData()
+                        self?.loadLovedOnes()
                         // Load family first, then sync
                         await self?.familyService.loadMyFamily()
                         await self?.syncWithSupabase()
+                    } else {
+                        // User signed out - clear all local data
+                        self?.handleSignOut()
                     }
                 }
             }
             .store(in: &cancellables)
+    }
+    
+    /// Handle user sign out - clear all local data
+    private func handleSignOut() {
+        print("🚪 User signed out - clearing local data")
+        lovedOnes = []
+        recognizedPerson = nil
+        syncError = nil
+        // Don't delete the stored data - just clear from memory
+        // This way if the same user signs back in, their local cache is still there
+    }
+    
+    /// Clear in-memory data (called before loading new user)
+    private func clearLocalData() {
+        print("🧹 Clearing in-memory data for new user session")
+        lovedOnes = []
+        recognizedPerson = nil
+        syncError = nil
     }
     
     // MARK: - Family Observer
@@ -71,38 +106,34 @@ final class AppStore: ObservableObject {
     // MARK: - Local Persistence
 
     private func loadLovedOnes() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
+        let key = currentStorageKey
+        print("📂 Loading loved ones for key: \(key)")
+        
+        guard let data = UserDefaults.standard.data(forKey: key),
               let decoded = try? JSONDecoder().decode([LovedOne].self, from: data) else {
-            // Load sample data if nothing saved
-            lovedOnes = [
-                LovedOne(
-                    id: "1",
-                    fullName: "Gabriela Martinez",
-                    familiarName: "Gabi",
-                    relationship: "Daughter",
-                    memoryPrompt: "She loves painting and always brings flowers on Sundays.",
-                    enrolled: false,
-                    photoFileNames: []
-                ),
-                LovedOne(
-                    id: "2",
-                    fullName: "Michael Chen",
-                    familiarName: "Mike",
-                    relationship: "Son",
-                    memoryPrompt: "He works as a teacher and visits every Wednesday.",
-                    enrolled: false,
-                    photoFileNames: []
-                )
-            ]
+            // Start with empty list for new users - no sample data
+            print("📂 No cached data found for user, starting fresh")
+            lovedOnes = []
             return
         }
         lovedOnes = decoded
+        print("📂 Loaded \(lovedOnes.count) loved ones from local cache")
     }
 
     private func saveLovedOnes() {
+        let key = currentStorageKey
         if let data = try? JSONEncoder().encode(lovedOnes) {
-            UserDefaults.standard.set(data, forKey: storageKey)
+            UserDefaults.standard.set(data, forKey: key)
+            print("💾 Saved \(lovedOnes.count) loved ones to key: \(key)")
         }
+    }
+    
+    /// Clear all local data for the current user (useful for debugging)
+    func clearAllUserData() {
+        let key = currentStorageKey
+        UserDefaults.standard.removeObject(forKey: key)
+        lovedOnes = []
+        print("🗑️ Cleared all data for key: \(key)")
     }
     
     // MARK: - Supabase Sync
