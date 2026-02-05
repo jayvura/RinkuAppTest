@@ -35,7 +35,7 @@ struct ProfileView: View {
                             .font(.system(size: Theme.FontSize.h1, weight: .bold))
                             .foregroundColor(Theme.Colors.textPrimary)
 
-                        Text("Manage your account")
+                        Text("profile_manage_account".localized)
                             .font(.system(size: Theme.FontSize.caption))
                             .foregroundColor(Theme.Colors.textSecondary)
                     }
@@ -368,22 +368,22 @@ struct ProfileCardView: View {
 
             // Stats with gradient dividers
             HStack(spacing: 0) {
-                ProfileStatItem(value: "\(lovedOnesCount)", label: "Loved Ones")
+                ProfileStatItem(value: "\(lovedOnesCount)", label: "profile_loved_ones_stat".localized)
 
                 Rectangle()
                     .fill(Theme.Colors.borderLight)
                     .frame(width: 1, height: 40)
 
-                ProfileStatItem(value: "\(recognitionsToday)", label: "Today")
+                ProfileStatItem(value: "\(recognitionsToday)", label: "profile_today_stat".localized)
 
                 Rectangle()
                     .fill(Theme.Colors.borderLight)
                     .frame(width: 1, height: 40)
 
                 if isSignedIn {
-                    ProfileStatItem(value: "Synced", label: "Status", isPositive: true)
+                    ProfileStatItem(value: "profile_synced".localized, label: "profile_status".localized, isPositive: true)
                 } else {
-                    ProfileStatItem(value: "Local", label: "Storage", isPositive: false)
+                    ProfileStatItem(value: "profile_local".localized, label: "profile_storage".localized, isPositive: false)
                 }
             }
             .padding(.top, 8)

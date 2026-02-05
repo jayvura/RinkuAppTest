@@ -23,9 +23,17 @@
 "home_loved_ones_button" = "Seres Queridos";
 "home_add_button" = "Agregar Ser Querido";
 "home_recognize_button" = "Reconocer";
+"home_getting_started" = "Primeros Pasos";
+"home_tip1_title" = "Agregar Seres Queridos";
+"home_tip1_description" = "Sube fotos y agrega detalles sobre las personas que quieres reconocer";
+"home_tip2_title" = "Usar Reconocimiento Facial";
+"home_tip2_description" = "Apunta tu cámara para identificar personas y recibir recordatorios útiles";
+"home_tip3_title" = "Mantente Conectado";
+"home_tip3_description" = "Ve el historial de reconocimiento y recordatorios en cualquier momento";
 
 // MARK: - Profile View
 "profile_title" = "Perfil";
+"profile_manage_account" = "Administra tu cuenta";
 "profile_guest_user" = "Usuario Invitado";
 "profile_sign_in_prompt" = "Inicia sesión para sincronizar tus datos";
 "profile_loved_ones_stat" = "Seres Queridos";
@@ -103,6 +111,9 @@
 
 // MARK: - Loved Ones
 "loved_ones_title" = "Seres Queridos";
+"loved_ones_count" = "%d personas agregadas";
+"loved_ones_search_placeholder" = "Buscar por nombre o relación";
+"loved_ones_no_matches" = "No se encontraron resultados para \"%@\"";
 "loved_ones_empty_title" = "Aún No Hay Seres Queridos";
 "loved_ones_empty_subtitle" = "Agrega tu primer ser querido para comenzar";
 "loved_ones_add_first" = "Agregar Tu Primer Ser Querido";
@@ -112,6 +123,7 @@
 
 // MARK: - Add Loved One
 "add_loved_one_title" = "Agregar Ser Querido";
+"add_loved_one_subtitle" = "Agrega a alguien especial para reconocer";
 "add_loved_one_full_name" = "Nombre Completo";
 "add_loved_one_full_name_placeholder" = "ej., María García";
 "add_loved_one_familiar_name" = "Nombre Familiar (Opcional)";
@@ -121,8 +133,14 @@
 "add_loved_one_memory_prompt" = "Recordatorio de Memoria (Opcional)";
 "add_loved_one_memory_prompt_placeholder" = "ej., Le encanta la jardinería y visita cada domingo";
 "add_loved_one_photos" = "Fotos";
+"add_loved_one_photo_count" = "%d foto(s)";
 "add_loved_one_add_photos" = "Agregar Fotos";
+"add_loved_one_add_more" = "Agregar Más Fotos";
+"add_loved_one_photo_tip" = "Agrega fotos claras de su rostro para un mejor reconocimiento. Varias fotos desde diferentes ángulos funcionan mejor.";
 "add_loved_one_save" = "Guardar Ser Querido";
+"add_loved_one_error_name" = "El nombre completo es requerido";
+"add_loved_one_error_relationship" = "La relación es requerida";
+"add_loved_one_error_photo" = "Se requiere al menos una foto";
 
 // MARK: - Loved One Detail
 "detail_edit" = "Editar";
@@ -136,6 +154,7 @@
 
 // MARK: - Camera & Recognition View
 "camera_recognize_title" = "Reconocer";
+"camera_subtitle" = "Apunta la cámara hacia un rostro";
 "camera_point_camera" = "Apunta la cámara hacia alguien";
 "camera_scanning" = "Escaneando...";
 "camera_recognized" = "¡Reconocido!";
@@ -143,6 +162,22 @@
 "camera_try_again" = "Intentar de Nuevo";
 "camera_no_enrolled" = "No hay seres queridos registrados";
 "camera_enroll_first" = "Por favor agrega y registra seres queridos primero";
+"camera_who_is_this" = "¿Quién es esta persona?";
+"camera_add_photo" = "Agregar Foto a Ser Querido";
+"camera_scan_again" = "Escanear de Nuevo";
+"camera_auto_info" = "Apunta la cámara hacia un rostro - el reconocimiento es automático";
+"camera_aws_warning" = "Credenciales de AWS no configuradas";
+"camera_configure_aws" = "Configura AWS para habilitar el reconocimiento";
+"camera_recognizing" = "Reconociendo...";
+"camera_position_face" = "Posiciona el rostro en el marco";
+"camera_hold_still" = "Mantente quieto...";
+"camera_choose_person" = "Elige a quién registrar";
+"camera_no_loved_ones" = "Aún no hay seres queridos agregados";
+"camera_speaking" = "Hablando...";
+"camera_last_seen" = "Visto por última vez %@";
+"camera_switched_glasses" = "Cambiado a cámara de gafas";
+"camera_switched_phone" = "Cambiado a cámara del teléfono";
+"camera_connecting_glasses" = "Conectando a las gafas...";
 
 // MARK: - Audio Reminders (TTS)
 "tts_this_is" = "Esta persona es %@, tu %@.";

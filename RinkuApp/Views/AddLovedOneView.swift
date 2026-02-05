@@ -37,21 +37,21 @@ struct AddLovedOneView: View {
         var valid = true
 
         if fullName.trimmingCharacters(in: .whitespaces).isEmpty {
-            fullNameError = "Full name is required"
+            fullNameError = "add_loved_one_error_name".localized
             valid = false
         } else {
             fullNameError = nil
         }
 
         if relationship.trimmingCharacters(in: .whitespaces).isEmpty {
-            relationshipError = "Relationship is required"
+            relationshipError = "add_loved_one_error_relationship".localized
             valid = false
         } else {
             relationshipError = nil
         }
 
         if selectedImages.isEmpty {
-            photoError = "At least one photo is required"
+            photoError = "add_loved_one_error_photo".localized
             valid = false
         } else {
             photoError = nil
@@ -183,7 +183,7 @@ struct AddLovedOneView: View {
                                 .font(.system(size: Theme.FontSize.h1, weight: .bold))
                                 .foregroundColor(Theme.Colors.textPrimary)
 
-                            Text("Add someone special to recognize")
+                            Text("add_loved_one_subtitle".localized)
                                 .font(.system(size: Theme.FontSize.caption))
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
@@ -278,7 +278,7 @@ struct AddLovedOneView: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "photo.on.rectangle.angled")
                                     .font(.system(size: 18, weight: .medium))
-                                Text(selectedImages.isEmpty ? "add_loved_one_add_photos".localized : "Add More Photos")
+                                Text(selectedImages.isEmpty ? "add_loved_one_add_photos".localized : "add_loved_one_add_more".localized)
                                     .font(.system(size: Theme.FontSize.body, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
@@ -311,7 +311,7 @@ struct AddLovedOneView: View {
                                 .font(.system(size: 12))
                                 .foregroundColor(Theme.Colors.accent)
 
-                            Text("Add clear photos of their face for better recognition. Multiple photos from different angles work best.")
+                            Text("add_loved_one_photo_tip".localized)
                                 .font(.system(size: Theme.FontSize.caption))
                                 .foregroundColor(Theme.Colors.textSecondary)
                                 .lineSpacing(2)

@@ -28,7 +28,7 @@ struct LovedOnesView: View {
                             .foregroundColor(Theme.Colors.textPrimary)
 
                         if !store.lovedOnes.isEmpty {
-                            Text("\(store.lovedOnes.count) people added")
+                            Text("loved_ones_count".localized(with: store.lovedOnes.count))
                                 .font(.system(size: Theme.FontSize.caption))
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
@@ -76,7 +76,7 @@ struct LovedOnesView: View {
                                 .foregroundColor(Theme.Colors.primary)
                         }
 
-                        TextField("Search by name or relationship", text: $searchQuery)
+                        TextField("loved_ones_search_placeholder".localized, text: $searchQuery)
                             .font(.system(size: Theme.FontSize.body))
                     }
                     .padding(.horizontal, 16)
@@ -93,7 +93,7 @@ struct LovedOnesView: View {
                                     .font(.system(size: 32))
                                     .foregroundColor(Theme.Colors.textMuted)
 
-                                Text("No matches found for \"\(searchQuery)\"")
+                                Text("loved_ones_no_matches".localized(with: searchQuery))
                                     .font(.system(size: Theme.FontSize.body))
                                     .foregroundColor(Theme.Colors.textSecondary)
                             }
