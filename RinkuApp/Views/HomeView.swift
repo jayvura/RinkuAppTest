@@ -84,7 +84,7 @@ struct HomeView: View {
 
                 // Tips Section
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Getting Started")
+                    Text("home_getting_started".localized)
                         .font(.system(size: Theme.FontSize.h3, weight: .semibold))
                         .foregroundColor(Theme.Colors.textPrimary)
                         .padding(.horizontal, 20)
@@ -93,22 +93,22 @@ struct HomeView: View {
                     VStack(spacing: 12) {
                         TipCard(
                             number: 1,
-                            title: "Add Loved Ones",
-                            description: "Upload photos and add details about people you want to recognize",
+                            title: "home_tip1_title".localized,
+                            description: "home_tip1_description".localized,
                             icon: "person.fill.badge.plus"
                         )
 
                         TipCard(
                             number: 2,
-                            title: "Use Face Recognition",
-                            description: "Point your camera to identify people and get helpful reminders",
+                            title: "home_tip2_title".localized,
+                            description: "home_tip2_description".localized,
                             icon: "camera.fill"
                         )
 
                         TipCard(
                             number: 3,
-                            title: "Stay Connected",
-                            description: "View recognition history and memory prompts anytime",
+                            title: "home_tip3_title".localized,
+                            description: "home_tip3_description".localized,
                             icon: "heart.fill"
                         )
                     }

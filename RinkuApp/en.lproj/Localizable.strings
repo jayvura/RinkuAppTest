@@ -23,9 +23,17 @@
 "home_loved_ones_button" = "Loved Ones";
 "home_add_button" = "Add Loved One";
 "home_recognize_button" = "Recognize";
+"home_getting_started" = "Getting Started";
+"home_tip1_title" = "Add Loved Ones";
+"home_tip1_description" = "Upload photos and add details about people you want to recognize";
+"home_tip2_title" = "Use Face Recognition";
+"home_tip2_description" = "Point your camera to identify people and get helpful reminders";
+"home_tip3_title" = "Stay Connected";
+"home_tip3_description" = "View recognition history and memory prompts anytime";
 
 // MARK: - Profile View
 "profile_title" = "Profile";
+"profile_manage_account" = "Manage your account";
 "profile_guest_user" = "Guest User";
 "profile_sign_in_prompt" = "Sign in to sync your data";
 "profile_loved_ones_stat" = "Loved Ones";
@@ -103,6 +111,9 @@
 
 // MARK: - Loved Ones
 "loved_ones_title" = "Loved Ones";
+"loved_ones_count" = "%d people added";
+"loved_ones_search_placeholder" = "Search by name or relationship";
+"loved_ones_no_matches" = "No matches found for \"%@\"";
 "loved_ones_empty_title" = "No Loved Ones Yet";
 "loved_ones_empty_subtitle" = "Add your first loved one to get started";
 "loved_ones_add_first" = "Add Your First Loved One";
@@ -112,6 +123,7 @@
 
 // MARK: - Add Loved One
 "add_loved_one_title" = "Add Loved One";
+"add_loved_one_subtitle" = "Add someone special to recognize";
 "add_loved_one_full_name" = "Full Name";
 "add_loved_one_full_name_placeholder" = "e.g., Maria Garcia";
 "add_loved_one_familiar_name" = "Familiar Name (Optional)";
@@ -121,8 +133,14 @@
 "add_loved_one_memory_prompt" = "Memory Prompt (Optional)";
 "add_loved_one_memory_prompt_placeholder" = "e.g., She loves gardening and visits every Sunday";
 "add_loved_one_photos" = "Photos";
+"add_loved_one_photo_count" = "%d photo(s)";
 "add_loved_one_add_photos" = "Add Photos";
+"add_loved_one_add_more" = "Add More Photos";
+"add_loved_one_photo_tip" = "Add clear photos of their face for better recognition. Multiple photos from different angles work best.";
 "add_loved_one_save" = "Save Loved One";
+"add_loved_one_error_name" = "Full name is required";
+"add_loved_one_error_relationship" = "Relationship is required";
+"add_loved_one_error_photo" = "At least one photo is required";
 
 // MARK: - Loved One Detail
 "detail_edit" = "Edit";
@@ -136,6 +154,7 @@
 
 // MARK: - Camera & Recognition View
 "camera_recognize_title" = "Recognize";
+"camera_subtitle" = "Point camera at a face";
 "camera_point_camera" = "Point the camera at someone";
 "camera_scanning" = "Scanning...";
 "camera_recognized" = "Recognized!";
@@ -143,6 +162,22 @@
 "camera_try_again" = "Try Again";
 "camera_no_enrolled" = "No enrolled loved ones";
 "camera_enroll_first" = "Please add and enroll loved ones first";
+"camera_who_is_this" = "Who is this?";
+"camera_add_photo" = "Add Photo to Loved One";
+"camera_scan_again" = "Scan Again";
+"camera_auto_info" = "Point camera at a face - recognition is automatic";
+"camera_aws_warning" = "AWS credentials not configured";
+"camera_configure_aws" = "Configure AWS to enable recognition";
+"camera_recognizing" = "Recognizing...";
+"camera_position_face" = "Position face in frame";
+"camera_hold_still" = "Hold still...";
+"camera_choose_person" = "Choose person to enroll";
+"camera_no_loved_ones" = "No loved ones added yet";
+"camera_speaking" = "Speaking...";
+"camera_last_seen" = "Last seen %@";
+"camera_switched_glasses" = "Switched to glasses camera";
+"camera_switched_phone" = "Switched to phone camera";
+"camera_connecting_glasses" = "Connecting to glasses...";
 
 // MARK: - Audio Reminders (TTS)
 "tts_this_is" = "This is %@, your %@.";

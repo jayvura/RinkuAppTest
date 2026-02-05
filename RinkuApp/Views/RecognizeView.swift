@@ -12,6 +12,7 @@ struct RecognizeView: View {
     @StateObject private var cameraSourceManager = CameraSourceManager.shared
     @ObservedObject private var wearablesService = WearablesService.shared
     @ObservedObject private var glassesCameraManager = GlassesCameraManager.shared
+    @ObservedObject private var languageManager = LanguageManager.shared
 
     @State private var showPermissions = false
     @State private var status: RecognitionStatus = .idle
@@ -32,11 +33,11 @@ struct RecognizeView: View {
                     // Header with Camera Source Toggle
                     HStack(alignment: .center) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Recognize")
+                            Text("camera_recognize_title".localized)
                                 .font(.system(size: Theme.FontSize.h1, weight: .bold))
                                 .foregroundColor(Theme.Colors.textPrimary)
 
-                            Text("Point camera at a face")
+                            Text("camera_subtitle".localized)
                                 .font(.system(size: Theme.FontSize.caption))
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
@@ -87,7 +88,7 @@ struct RecognizeView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(Theme.Colors.warning)
-                            Text("AWS credentials not configured")
+                            Text("camera_aws_warning".localized)
                                 .font(.system(size: Theme.FontSize.caption))
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
@@ -115,7 +116,7 @@ struct RecognizeView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "info.circle")
                                         .foregroundColor(Theme.Colors.primary)
-                                    Text("Point camera at a face - recognition is automatic")
+                                    Text("camera_auto_info".localized)
                                         .font(.system(size: Theme.FontSize.caption))
                                         .foregroundColor(Theme.Colors.textSecondary)
                                 }
@@ -127,7 +128,7 @@ struct RecognizeView: View {
                             // Manual recognize button (if auto is disabled or as fallback)
                             if !faceDetectionManager.isAutoRecognitionEnabled || !isAWSConfigured {
                                 RinkuButton(
-                                    title: "Who is this?",
+                                    title: "camera_who_is_this".localized,
                                     variant: .primary,
                                     size: .large,
                                     isLoading: status == .extracting,
@@ -140,7 +141,7 @@ struct RecognizeView: View {
                             }
 
                             RinkuButton(
-                                title: "Add Photo to Loved One",
+                                title: "camera_add_photo".localized,
                                 icon: "person.fill.badge.plus",
                                 variant: .secondary,
                                 size: .large,
@@ -152,7 +153,7 @@ struct RecognizeView: View {
                     } else {
                         // Show "Scan Again" button when recognized
                         RinkuButton(
-                            title: "Scan Again",
+                            title: "camera_scan_again".localized,
                             icon: "arrow.clockwise",
                             variant: .secondary,
                             size: .large
@@ -183,16 +184,16 @@ struct RecognizeView: View {
             }
 
             // Bottom Sheet
-            BottomSheet(isPresented: $showEnrollSheet, title: "Choose person to enroll") {
+            BottomSheet(isPresented: $showEnrollSheet, title: "camera_choose_person".localized) {
                 VStack(spacing: 12) {
                     if store.lovedOnes.isEmpty {
                         VStack(spacing: 16) {
-                            Text("No loved ones added yet")
+                            Text("camera_no_loved_ones".localized)
                                 .font(.system(size: Theme.FontSize.body))
                                 .foregroundColor(Theme.Colors.textSecondary)
 
                             RinkuButton(
-                                title: "Add Loved One",
+                                title: "home_add_button".localized,
                                 variant: .primary,
                                 size: .medium
                             ) {
@@ -249,6 +250,7 @@ struct RecognizeView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: status)
+        .id(languageManager.currentLanguage) // Force refresh when language changes
     }
 
     private var canRecognize: Bool {
@@ -264,19 +266,19 @@ struct RecognizeView: View {
     
     private var autoStatusMessage: String? {
         if !isAWSConfigured {
-            return "Configure AWS to enable recognition"
+            return "camera_configure_aws".localized
         }
         if status == .extracting || faceDetectionManager.isRecognizing {
-            return "Recognizing..."
+            return "camera_recognizing".localized
         }
         if status == .recognized {
             return nil // Result card shows info
         }
         if !faceDetectionManager.hasFace {
-            return "Position face in frame"
+            return "camera_position_face".localized
         }
         if faceDetectionManager.faceStabilityProgress < 1.0 {
-            return "Hold still..."
+            return "camera_hold_still".localized
         }
         return nil
     }
@@ -754,7 +756,7 @@ struct RecognitionResultCard: View {
                     ProgressView()
                         .scaleEffect(0.8)
                         .tint(Theme.Colors.primary)
-                    Text("Speaking...")
+                    Text("camera_speaking".localized)
                         .font(.system(size: Theme.FontSize.caption, weight: .medium))
                         .foregroundColor(Theme.Colors.primary)
                 }
@@ -905,7 +907,7 @@ struct GlassesCameraFrameView: View {
                     )
                     .frame(height: 400)
                     .overlay(
-                        VStack(spacing: 16) {
+                            VStack(spacing: 16) {
                             ZStack {
                                 Circle()
                                     .stroke(Theme.Gradients.primary, lineWidth: 3)
@@ -915,7 +917,7 @@ struct GlassesCameraFrameView: View {
                                     .tint(.white)
                                     .scaleEffect(1.2)
                             }
-                            Text("Connecting to glasses...")
+                            Text("camera_connecting_glasses".localized)
                                 .font(.system(size: Theme.FontSize.caption, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
                         }
@@ -1011,7 +1013,7 @@ struct FaceDetectionOverlay: View {
                             .progressViewStyle(LinearProgressViewStyle(tint: Theme.Colors.primary))
                             .frame(width: 120)
 
-                        Text("Hold still...")
+                        Text("camera_hold_still".localized)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.white)
                     }
