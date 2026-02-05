@@ -8,21 +8,25 @@ struct EmptyStateView: View {
     let onCtaClick: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            // Icon
+        VStack(spacing: 20) {
+            // Icon with gradient background
             ZStack {
                 Circle()
-                    .fill(Theme.Colors.primaryLight)
-                    .frame(width: 64, height: 64)
+                    .fill(Theme.Gradients.subtle)
+                    .frame(width: 88, height: 88)
+
+                Circle()
+                    .stroke(Theme.Gradients.primary, lineWidth: 3)
+                    .frame(width: 88, height: 88)
 
                 Image(systemName: icon)
-                    .font(.system(size: 28))
-                    .foregroundColor(Theme.Colors.primary)
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundStyle(Theme.Gradients.primary)
             }
 
             // Title
             Text(title)
-                .font(.system(size: Theme.FontSize.h2, weight: .semibold))
+                .font(.system(size: Theme.FontSize.h2, weight: .bold))
                 .foregroundColor(Theme.Colors.textPrimary)
 
             // Body
@@ -30,24 +34,27 @@ struct EmptyStateView: View {
                 .font(.system(size: Theme.FontSize.body))
                 .foregroundColor(Theme.Colors.textSecondary)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 300)
+                .frame(maxWidth: 280)
+                .lineSpacing(4)
 
             // CTA Button
             RinkuButton(
                 title: ctaLabel,
+                icon: "plus",
                 variant: .primary,
                 size: .large,
                 action: onCtaClick
             )
+            .padding(.top, 8)
         }
-        .padding(32)
-        .background(Color.white)
-        .cornerRadius(Theme.CornerRadius.medium)
+        .padding(36)
+        .background(Theme.Colors.cardBackground)
+        .cornerRadius(Theme.CornerRadius.xl)
         .overlay(
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [8]))
-                .foregroundColor(Theme.Colors.border)
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.xl)
+                .stroke(Theme.Colors.primary.opacity(0.2), lineWidth: 2)
         )
+        .themeShadow(Theme.Shadows.medium)
     }
 }
 
@@ -60,6 +67,6 @@ struct EmptyStateView: View {
     ) {
         print("CTA tapped")
     }
-    .padding()
-    .background(Color.gray.opacity(0.1))
+    .padding(24)
+    .background(Color(hex: "FAFAFA"))
 }

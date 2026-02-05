@@ -26,19 +26,25 @@ struct ProfileView: View {
     }
     
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                // Header
-                HStack {
-                    Text("profile_title".localized)
-                        .font(.system(size: Theme.FontSize.h1, weight: .bold))
-                        .foregroundColor(Theme.Colors.textPrimary)
+                // Header with gradient accent
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("profile_title".localized)
+                            .font(.system(size: Theme.FontSize.h1, weight: .bold))
+                            .foregroundColor(Theme.Colors.textPrimary)
+
+                        Text("Manage your account")
+                            .font(.system(size: Theme.FontSize.caption))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                    }
                     Spacer()
-                    
+
                     // Quick language toggle
                     LanguageToggleButton()
                 }
-                
+
                 // Profile Card
                 ProfileCardView(
                     name: userName,
@@ -203,7 +209,7 @@ struct ProfileView: View {
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
                         .padding(16)
-                        .background(Color.white)
+                        .background(Theme.Colors.cardBackground)
                         .cornerRadius(Theme.CornerRadius.medium)
                         .overlay(
                             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -272,13 +278,16 @@ struct ProfileView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, 32)
+            .padding(.bottom, 100)
                 
-                Spacer(minLength: 100)
+                
             }
             .padding(.horizontal, 16)
             .padding(.top, 32)
+            .padding(.bottom, 100)
         }
-        .background(Theme.Colors.background)
+        .scrollContentBackground(.hidden)
+        .background(Theme.Colors.background.ignoresSafeArea())
         .sheet(isPresented: $showAuthSheet) {
             AuthView(authService: authService)
         }
@@ -313,7 +322,7 @@ struct ProfileCardView: View {
     let isSignedIn: Bool
     let lovedOnesCount: Int
     var recognitionsToday: Int = 0
-    
+
     private var initials: String {
         let parts = name.split(separator: " ")
         if parts.count >= 2 {
@@ -321,49 +330,56 @@ struct ProfileCardView: View {
         }
         return String(name.prefix(2)).uppercased()
     }
-    
+
     var body: some View {
-        VStack(spacing: 16) {
-            // Avatar
+        VStack(spacing: 20) {
+            // Avatar with gradient ring
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Theme.Colors.primary, Theme.Colors.primaryDark],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 80, height: 80)
-                
+                    .stroke(Theme.Gradients.primary, lineWidth: 3)
+                    .frame(width: 96, height: 96)
+
+                Circle()
+                    .fill(Theme.Gradients.primary)
+                    .frame(width: 84, height: 84)
+                    .shadow(color: Theme.Colors.primary.opacity(0.4), radius: 12, y: 6)
+
                 if isSignedIn {
                     Text(initials)
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
                 } else {
                     Image(systemName: "person.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: 36))
                         .foregroundColor(.white)
                 }
             }
-            
+
             // Name & Email
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Text(name)
-                    .font(.system(size: Theme.FontSize.h2, weight: .semibold))
+                    .font(.system(size: Theme.FontSize.h2, weight: .bold))
                     .foregroundColor(Theme.Colors.textPrimary)
-                
+
                 Text(email)
                     .font(.system(size: Theme.FontSize.caption))
                     .foregroundColor(Theme.Colors.textSecondary)
             }
-            
-            // Stats
-            HStack(spacing: 24) {
+
+            // Stats with gradient dividers
+            HStack(spacing: 0) {
                 ProfileStatItem(value: "\(lovedOnesCount)", label: "Loved Ones")
-                
+
+                Rectangle()
+                    .fill(Theme.Colors.borderLight)
+                    .frame(width: 1, height: 40)
+
                 ProfileStatItem(value: "\(recognitionsToday)", label: "Today")
-                
+
+                Rectangle()
+                    .fill(Theme.Colors.borderLight)
+                    .frame(width: 1, height: 40)
+
                 if isSignedIn {
                     ProfileStatItem(value: "Synced", label: "Status", isPositive: true)
                 } else {
@@ -372,14 +388,11 @@ struct ProfileCardView: View {
             }
             .padding(.top, 8)
         }
-        .padding(24)
+        .padding(28)
         .frame(maxWidth: .infinity)
-        .background(Color.white)
-        .cornerRadius(Theme.CornerRadius.large)
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.large)
-                .stroke(Theme.Colors.border, lineWidth: 1)
-        )
+        .background(Theme.Colors.cardBackground)
+        .cornerRadius(Theme.CornerRadius.xl)
+        .themeShadow(Theme.Shadows.medium)
     }
 }
 
@@ -389,11 +402,11 @@ struct ProfileStatItem: View {
     let value: String
     let label: String
     var isPositive: Bool? = nil
-    
+
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             if let isPositive = isPositive {
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     Circle()
                         .fill(isPositive ? Theme.Colors.success : Theme.Colors.warning)
                         .frame(width: 8, height: 8)
@@ -404,13 +417,16 @@ struct ProfileStatItem: View {
             } else {
                 Text(value)
                     .font(.system(size: Theme.FontSize.h2, weight: .bold))
-                    .foregroundColor(Theme.Colors.primary)
+                    .foregroundStyle(Theme.Gradients.primary)
             }
-            
+
             Text(label)
-                .font(.system(size: Theme.FontSize.caption))
+                .font(.system(size: 11, weight: .medium))
                 .foregroundColor(Theme.Colors.textSecondary)
+                .textCase(.uppercase)
+                .tracking(0.5)
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -418,16 +434,22 @@ struct ProfileStatItem: View {
 
 struct ProfileSectionHeader: View {
     let title: String
-    
+
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
+            Rectangle()
+                .fill(Theme.Gradients.primary)
+                .frame(width: 3, height: 14)
+                .cornerRadius(2)
+
             Text(title)
-                .font(.system(size: Theme.FontSize.caption, weight: .semibold))
+                .font(.system(size: 12, weight: .bold))
                 .foregroundColor(Theme.Colors.textSecondary)
                 .textCase(.uppercase)
+                .tracking(1)
             Spacer()
         }
-        .padding(.top, 8)
+        .padding(.top, 12)
     }
 }
 
@@ -447,28 +469,28 @@ struct ProfileItem: View {
     var value: String? = nil
     let type: ProfileItemType
     var isEnabled: Bool = false
-    
+
     @State private var toggleState: Bool = false
-    
+
     var body: some View {
-        HStack(spacing: 12) {
-            // Icon
+        HStack(spacing: 14) {
+            // Icon with gradient background
             ZStack {
                 Circle()
-                    .fill(Theme.Colors.primaryLight)
-                    .frame(width: 40, height: 40)
-                
+                    .fill(Theme.Gradients.subtle)
+                    .frame(width: 42, height: 42)
+
                 Image(systemName: icon)
-                    .font(.system(size: 18))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(Theme.Colors.primary)
             }
-            
+
             // Label and Value
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(label)
                     .font(.system(size: Theme.FontSize.body, weight: .medium))
                     .foregroundColor(Theme.Colors.textPrimary)
-                
+
                 if type == .info, let value = value {
                     Text(value)
                         .font(.system(size: Theme.FontSize.caption))
@@ -476,15 +498,21 @@ struct ProfileItem: View {
                         .lineLimit(1)
                 }
             }
-            
+
             Spacer()
-            
+
             // Right side content
             switch type {
             case .link:
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Theme.Colors.textSecondary)
+                ZStack {
+                    Circle()
+                        .fill(Theme.Colors.primaryLight)
+                        .frame(width: 28, height: 28)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Theme.Colors.primary)
+                }
             case .toggle:
                 Toggle("", isOn: $toggleState)
                     .labelsHidden()
@@ -495,12 +523,9 @@ struct ProfileItem: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                .stroke(Theme.Colors.border, lineWidth: 1)
-        )
+        .themeShadow(Theme.Shadows.small)
     }
 }
 
@@ -544,7 +569,7 @@ struct AudioToggleItem: View {
                 }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -594,7 +619,7 @@ struct ProfileActionButton: View {
                     .foregroundColor(Theme.Colors.textSecondary)
             }
             .padding(16)
-            .background(Color.white)
+            .background(Theme.Colors.cardBackground)
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -662,7 +687,7 @@ struct RecognitionHistoryItem: View {
                 .foregroundColor(Theme.Colors.success)
         }
         .padding(12)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -930,7 +955,7 @@ struct GlassesConnectionItem: View {
                     .foregroundColor(Theme.Colors.textSecondary)
             }
             .padding(16)
-            .background(Color.white)
+            .background(Theme.Colors.cardBackground)
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -988,7 +1013,7 @@ struct FamilyCard: View {
                     .foregroundColor(Theme.Colors.textSecondary)
             }
             .padding(16)
-            .background(Color.white)
+            .background(Theme.Colors.cardBackground)
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)

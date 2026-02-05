@@ -264,7 +264,7 @@ struct SetupFlowView: View {
                 TextField("e.g., Grandma's Care Circle", text: $familyName)
                     .font(.system(size: 16))
                     .padding(16)
-                    .background(Color.white)
+                    .background(Theme.Colors.cardBackground)
                     .cornerRadius(12)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -358,7 +358,7 @@ struct SetupFlowView: View {
                     .font(.system(size: 28, weight: .bold, design: .monospaced))
                     .multilineTextAlignment(.center)
                     .padding(16)
-                    .background(Color.white)
+                    .background(Theme.Colors.cardBackground)
                     .cornerRadius(12)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -464,7 +464,7 @@ struct SetupFlowView: View {
                         .padding(.top, 8)
                     }
                     .padding(24)
-                    .background(Color.white)
+                    .background(Theme.Colors.cardBackground)
                     .cornerRadius(16)
                     .shadow(color: Color.black.opacity(0.05), radius: 10, y: 4)
                 }
@@ -642,7 +642,7 @@ struct RoleOptionCard: View {
                 }
             }
             .padding(16)
-            .background(Color.white)
+            .background(Theme.Colors.cardBackground)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)

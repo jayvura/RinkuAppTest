@@ -262,7 +262,7 @@ struct PermissionCard: View {
             }
         }
         .padding(24)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)

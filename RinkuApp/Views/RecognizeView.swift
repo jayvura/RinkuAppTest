@@ -27,15 +27,21 @@ struct RecognizeView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     // Header with Camera Source Toggle
-                    HStack {
-                        Text("Recognize")
-                            .font(.system(size: Theme.FontSize.h1, weight: .bold))
-                            .foregroundColor(Theme.Colors.textPrimary)
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Recognize")
+                                .font(.system(size: Theme.FontSize.h1, weight: .bold))
+                                .foregroundColor(Theme.Colors.textPrimary)
+
+                            Text("Point camera at a face")
+                                .font(.system(size: Theme.FontSize.caption))
+                                .foregroundColor(Theme.Colors.textSecondary)
+                        }
                         Spacer()
-                        
+
                         // Camera Source Toggle
                         CameraSourceToggle(
                             selectedSource: $cameraSourceManager.selectedSource,
@@ -155,12 +161,14 @@ struct RecognizeView: View {
                         }
                     }
 
-                    Spacer(minLength: 100)
+                    
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 32)
+            .padding(.bottom, 100)
             }
-            .background(Theme.Colors.background)
+            .scrollContentBackground(.hidden)
+            .background(Theme.Colors.background.ignoresSafeArea())
 
             // Toast
             if showToast {
@@ -274,10 +282,19 @@ struct RecognizeView: View {
     }
 
     private func checkPermissionsAndSetup() {
-        if !cameraManager.isAuthorized {
+        // Check system authorization status directly to avoid race condition
+        let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
+
+        if cameraStatus == .authorized {
+            // Already authorized, start camera
+            cameraManager.checkAuthorizationStatus()
+            startCamera()
+        } else if cameraStatus == .notDetermined {
+            // Need to request permission
             showPermissions = true
         } else {
-            startCamera()
+            // Denied or restricted - show permissions view to guide user to settings
+            showPermissions = true
         }
     }
 
@@ -625,13 +642,12 @@ struct RecognitionResultCard: View {
     @ObservedObject var audioService: AudioService
     @ObservedObject var historyService: RecognitionHistoryService
     var wasOffline: Bool = false
-    
+
     private var previousRecognitions: [RecognitionEvent] {
-        // Get previous recognitions (excluding the most recent one which is this one)
         let events = historyService.events(forPersonId: person.id)
         return events.count > 1 ? Array(events.dropFirst()) : []
     }
-    
+
     private var lastSeenText: String? {
         guard let previousEvent = previousRecognitions.first else { return nil }
         return "Last seen \(previousEvent.timeAgo)"
@@ -639,46 +655,60 @@ struct RecognitionResultCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                // Avatar
+            HStack(alignment: .top, spacing: 14) {
+                // Avatar with gradient ring
                 ZStack {
                     Circle()
-                        .fill(Theme.Colors.primaryLight)
-                        .frame(width: 64, height: 64)
+                        .stroke(Theme.Gradients.primary, lineWidth: 3)
+                        .frame(width: 70, height: 70)
+
+                    Circle()
+                        .fill(Theme.Gradients.subtle)
+                        .frame(width: 62, height: 62)
 
                     Text(person.initials)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(Theme.Colors.primary)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(Theme.Gradients.primary)
                 }
 
                 // Info
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
                         Text(person.displayName)
-                            .font(.system(size: Theme.FontSize.h2, weight: .semibold))
+                            .font(.system(size: Theme.FontSize.h2, weight: .bold))
                             .foregroundColor(Theme.Colors.textPrimary)
-                        
+
                         // Offline badge
                         if wasOffline {
                             Text("OFFLINE")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundColor(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
                                 .background(Color.orange)
-                                .cornerRadius(4)
+                                .cornerRadius(Theme.CornerRadius.small)
                         }
                     }
 
-                    Text(person.relationship)
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundColor(Theme.Colors.textSecondary)
-                    
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(Theme.Colors.accent.opacity(0.6))
+
+                        Text(person.relationship)
+                            .font(.system(size: Theme.FontSize.caption))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                    }
+
                     // Last seen info
                     if let lastSeen = lastSeenText {
-                        Text(lastSeen)
-                            .font(.system(size: Theme.FontSize.caption))
-                            .foregroundColor(Theme.Colors.primary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 10))
+                            Text(lastSeen)
+                                .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        }
+                        .foregroundColor(Theme.Colors.primary)
                     }
                 }
 
@@ -688,42 +718,60 @@ struct RecognitionResultCard: View {
                 Button(action: {
                     audioService.speakRecognitionReminder(for: person)
                 }) {
-                    Image(systemName: audioService.isSpeaking ? "speaker.wave.3.fill" : "speaker.wave.2.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(Theme.Colors.primary)
-                        .frame(width: 40, height: 40)
-                        .background(Theme.Colors.primaryLight)
-                        .clipShape(Circle())
+                    ZStack {
+                        Circle()
+                            .fill(Theme.Gradients.primary)
+                            .frame(width: 44, height: 44)
+                            .shadow(color: Theme.Colors.primary.opacity(0.3), radius: 8, y: 4)
+
+                        Image(systemName: audioService.isSpeaking ? "speaker.wave.3.fill" : "speaker.wave.2.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white)
+                    }
                 }
             }
 
             // Memory Prompt
             if let memoryPrompt = person.memoryPrompt {
-                Text(memoryPrompt)
-                    .font(.system(size: Theme.FontSize.body))
-                    .foregroundColor(Theme.Colors.textSecondary)
-                    .padding(.leading, 76)
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Theme.Colors.accent)
+
+                    Text(memoryPrompt)
+                        .font(.system(size: Theme.FontSize.body))
+                        .foregroundColor(Theme.Colors.textSecondary)
+                        .lineSpacing(3)
+                }
+                .padding(14)
+                .background(Theme.Colors.accentLight.opacity(0.5))
+                .cornerRadius(Theme.CornerRadius.medium)
             }
-            
+
             // Audio status indicator
             if audioService.isSpeaking {
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     ProgressView()
                         .scaleEffect(0.8)
+                        .tint(Theme.Colors.primary)
                     Text("Speaking...")
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundColor(Theme.Colors.textSecondary)
+                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .foregroundColor(Theme.Colors.primary)
                 }
-                .padding(.leading, 76)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Theme.Colors.primaryLight)
+                .cornerRadius(Theme.CornerRadius.pill)
             }
         }
         .padding(24)
-        .background(Color.white)
-        .cornerRadius(Theme.CornerRadius.medium)
+        .background(Theme.Colors.cardBackground)
+        .cornerRadius(Theme.CornerRadius.xl)
         .overlay(
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                .stroke(wasOffline ? Color.orange : Theme.Colors.border, lineWidth: wasOffline ? 2 : 1)
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.xl)
+                .stroke(wasOffline ? Color.orange.opacity(0.5) : Theme.Colors.primary.opacity(0.2), lineWidth: 2)
         )
+        .themeShadow(Theme.Shadows.medium)
     }
 }
 
@@ -733,7 +781,7 @@ struct CameraSourceToggle: View {
     @Binding var selectedSource: CameraSource
     let isGlassesConnected: Bool
     let onGlassesSetup: () -> Void
-    
+
     var body: some View {
         Menu {
             ForEach(CameraSource.allCases) { source in
@@ -758,17 +806,18 @@ struct CameraSourceToggle: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Image(systemName: selectedSource.icon)
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .medium))
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 9, weight: .bold))
             }
-            .foregroundColor(Theme.Colors.primary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Theme.Colors.primaryLight)
-            .cornerRadius(16)
+            .foregroundColor(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Theme.Gradients.primary)
+            .cornerRadius(Theme.CornerRadius.pill)
+            .shadow(color: Theme.Colors.primary.opacity(0.3), radius: 8, y: 4)
         }
     }
 }
@@ -779,36 +828,52 @@ struct CameraSourceStatusBar: View {
     let activeSource: CameraSource
     let statusMessage: String
     let isGlassesConnected: Bool
-    
+
     private var statusColor: Color {
         if activeSource == .glasses && isGlassesConnected {
             return Theme.Colors.success
         }
         return Theme.Colors.primary
     }
-    
+
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: activeSource == .glasses ? "eyeglasses" : "iphone")
-                .font(.system(size: 14))
-                .foregroundColor(statusColor)
-            
-            Text(statusMessage)
-                .font(.system(size: Theme.FontSize.caption))
-                .foregroundColor(Theme.Colors.textSecondary)
-            
-            Spacer()
-            
-            if activeSource == .glasses {
+        HStack(spacing: 10) {
+            ZStack {
                 Circle()
-                    .fill(isGlassesConnected ? Theme.Colors.success : Theme.Colors.warning)
-                    .frame(width: 8, height: 8)
+                    .fill(statusColor.opacity(0.15))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: activeSource == .glasses ? "eyeglasses" : "iphone")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(statusColor)
+            }
+
+            Text(statusMessage)
+                .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                .foregroundColor(Theme.Colors.textSecondary)
+
+            Spacer()
+
+            if activeSource == .glasses {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(isGlassesConnected ? Theme.Colors.success : Theme.Colors.warning)
+                        .frame(width: 8, height: 8)
+
+                    Text(isGlassesConnected ? "Connected" : "Connecting")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(isGlassesConnected ? Theme.Colors.success : Theme.Colors.warning)
+                }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(statusColor.opacity(0.1))
-        .cornerRadius(8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Theme.Colors.cardBackground)
+        .cornerRadius(Theme.CornerRadius.medium)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
+                .stroke(statusColor.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 
@@ -818,7 +883,7 @@ struct GlassesCameraFrameView: View {
     let image: UIImage?
     @ObservedObject var faceDetectionManager: FaceDetectionManager
     var statusMessage: String?
-    
+
     var body: some View {
         ZStack {
             // Video frame from glasses
@@ -831,68 +896,86 @@ struct GlassesCameraFrameView: View {
             } else {
                 // Placeholder when no frame
                 Rectangle()
-                    .fill(Color.black.opacity(0.8))
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.black.opacity(0.9), Color.black.opacity(0.7)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
                     .frame(height: 400)
                     .overlay(
-                        VStack(spacing: 12) {
-                            ProgressView()
-                                .tint(.white)
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .stroke(Theme.Gradients.primary, lineWidth: 3)
+                                    .frame(width: 60, height: 60)
+
+                                ProgressView()
+                                    .tint(.white)
+                                    .scaleEffect(1.2)
+                            }
                             Text("Connecting to glasses...")
-                                .font(.system(size: Theme.FontSize.caption))
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
                         }
                     )
             }
-            
+
             // Face detection overlay
             if faceDetectionManager.hasFace {
                 FaceDetectionOverlay(
                     faceDetectionManager: faceDetectionManager
                 )
             }
-            
+
             // Status message overlay
             if let message = statusMessage {
                 VStack {
                     Spacer()
                     Text(message)
-                        .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                        .font(.system(size: Theme.FontSize.caption, weight: .semibold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(20)
-                        .padding(.bottom, 16)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.7))
+                        )
+                        .padding(.bottom, 20)
                 }
             }
-            
+
             // Glasses indicator
             VStack {
                 HStack {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Image(systemName: "eyeglasses")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12, weight: .medium))
                         Text("GLASSES")
                             .font(.system(size: 10, weight: .bold))
+                            .tracking(0.5)
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Theme.Colors.primary)
-                    .cornerRadius(4)
-                    
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Theme.Gradients.primary)
+                    .cornerRadius(Theme.CornerRadius.pill)
+                    .shadow(color: Theme.Colors.primary.opacity(0.4), radius: 8, y: 2)
+
                     Spacer()
                 }
-                .padding(12)
-                
+                .padding(16)
+
                 Spacer()
             }
         }
-        .cornerRadius(Theme.CornerRadius.large)
+        .cornerRadius(Theme.CornerRadius.xl)
         .overlay(
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.large)
-                .stroke(Theme.Colors.primary, lineWidth: 2)
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.xl)
+                .stroke(Theme.Gradients.primary, lineWidth: 3)
         )
+        .themeShadow(Theme.Shadows.medium)
     }
 }
 
@@ -900,41 +983,94 @@ struct GlassesCameraFrameView: View {
 
 struct FaceDetectionOverlay: View {
     @ObservedObject var faceDetectionManager: FaceDetectionManager
-    
+
+    private var borderColor: Color {
+        faceDetectionManager.faceStabilityProgress >= 1.0 ? Theme.Colors.success : Theme.Colors.primary
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ForEach(Array(faceDetectionManager.detectedFaces.enumerated()), id: \.offset) { index, faceBoundingBox in
                 let rect = convertBoundingBox(faceBoundingBox, in: geometry.size)
-                
-                Rectangle()
-                    .stroke(faceDetectionManager.faceStabilityProgress >= 1.0 ? Theme.Colors.success : Theme.Colors.primary, lineWidth: 3)
-                    .frame(width: rect.width, height: rect.height)
-                    .position(x: rect.midX, y: rect.midY)
+
+                // Face detection frame with animated corners
+                ZStack {
+                    // Corner brackets
+                    FaceFrameCorners(color: borderColor)
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                }
             }
-            
+
             // Progress indicator
             if faceDetectionManager.hasFace && faceDetectionManager.faceStabilityProgress < 1.0 {
                 VStack {
                     Spacer()
-                    ProgressView(value: faceDetectionManager.faceStabilityProgress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: Theme.Colors.primary))
-                        .frame(width: 100)
-                        .padding(.bottom, 40)
+                    VStack(spacing: 8) {
+                        ProgressView(value: faceDetectionManager.faceStabilityProgress)
+                            .progressViewStyle(LinearProgressViewStyle(tint: Theme.Colors.primary))
+                            .frame(width: 120)
+
+                        Text("Hold still...")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(Color.black.opacity(0.6))
+                    .cornerRadius(Theme.CornerRadius.medium)
+                    .padding(.bottom, 50)
                 }
                 .frame(maxWidth: .infinity)
             }
         }
     }
-    
+
     private func convertBoundingBox(_ boundingBox: CGRect, in size: CGSize) -> CGRect {
-        // Vision coordinates are normalized with origin at bottom-left
-        // Convert to UIKit coordinates with origin at top-left
         let x = boundingBox.minX * size.width
         let y = (1 - boundingBox.maxY) * size.height
         let width = boundingBox.width * size.width
         let height = boundingBox.height * size.height
-        
+
         return CGRect(x: x, y: y, width: width, height: height)
+    }
+}
+
+// MARK: - Face Frame Corners
+
+struct FaceFrameCorners: View {
+    let color: Color
+    let cornerLength: CGFloat = 24
+    let lineWidth: CGFloat = 4
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let height = geometry.size.height
+
+            Path { path in
+                // Top-left corner
+                path.move(to: CGPoint(x: 0, y: cornerLength))
+                path.addLine(to: CGPoint(x: 0, y: 0))
+                path.addLine(to: CGPoint(x: cornerLength, y: 0))
+
+                // Top-right corner
+                path.move(to: CGPoint(x: width - cornerLength, y: 0))
+                path.addLine(to: CGPoint(x: width, y: 0))
+                path.addLine(to: CGPoint(x: width, y: cornerLength))
+
+                // Bottom-right corner
+                path.move(to: CGPoint(x: width, y: height - cornerLength))
+                path.addLine(to: CGPoint(x: width, y: height))
+                path.addLine(to: CGPoint(x: width - cornerLength, y: height))
+
+                // Bottom-left corner
+                path.move(to: CGPoint(x: cornerLength, y: height))
+                path.addLine(to: CGPoint(x: 0, y: height))
+                path.addLine(to: CGPoint(x: 0, y: height - cornerLength))
+            }
+            .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+        }
     }
 }
 

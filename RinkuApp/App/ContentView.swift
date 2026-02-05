@@ -52,26 +52,32 @@ struct ContentView: View {
     }
     
     private var mainAppView: some View {
-        ZStack(alignment: .bottom) {
-            // Main Content
-            Group {
-                switch selectedTab {
-                case .home:
-                    HomeView(selectedTab: $selectedTab)
-                case .lovedOnes:
-                    LovedOnesView(store: store, selectedTab: $selectedTab)
-                case .add:
-                    AddLovedOneView(store: store, selectedTab: $selectedTab)
-                case .recognize:
-                    RecognizeView(store: store, selectedTab: $selectedTab)
-                case .profile:
-                    ProfileView(store: store)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                // Background that extends to all edges
+                Theme.Colors.background
+                    .ignoresSafeArea(.all)
 
-            // Tab Bar
-            TabBar(selectedTab: $selectedTab)
+                // Main Content
+                Group {
+                    switch selectedTab {
+                    case .home:
+                        HomeView(selectedTab: $selectedTab)
+                    case .lovedOnes:
+                        LovedOnesView(store: store, selectedTab: $selectedTab)
+                    case .add:
+                        AddLovedOneView(store: store, selectedTab: $selectedTab)
+                    case .recognize:
+                        RecognizeView(store: store, selectedTab: $selectedTab)
+                    case .profile:
+                        ProfileView(store: store)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Tab Bar with solid background
+                TabBar(selectedTab: $selectedTab)
+            }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }

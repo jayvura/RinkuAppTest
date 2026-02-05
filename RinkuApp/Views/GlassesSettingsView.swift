@@ -34,12 +34,12 @@ struct GlassesSettingsView: View {
                     // Troubleshooting
                     TroubleshootingCard()
                     
-                    Spacer(minLength: 100)
+                    
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
             }
-            .background(Theme.Colors.background)
+            .scrollContentBackground(.hidden)
             .navigationTitle("Smart Glasses")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -153,7 +153,7 @@ private struct ConnectionStatusCard: View {
             }
         }
         .padding(24)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.large)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.large)
@@ -270,7 +270,7 @@ private struct DeviceInfoCard: View {
             }
         }
         .padding(20)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -361,7 +361,7 @@ private struct TroubleshootingCard: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)

@@ -61,7 +61,7 @@ struct BottomSheet<Content: View>: View {
                         }
                         .frame(maxHeight: geometry.size.height * 0.6)
                     }
-                    .background(Color.white)
+                    .background(Theme.Colors.cardBackground)
                     .cornerRadius(Theme.CornerRadius.large, corners: [.topLeft, .topRight])
                     .transition(.move(edge: .bottom))
                 }

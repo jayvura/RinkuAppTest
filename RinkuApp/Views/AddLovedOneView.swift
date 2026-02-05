@@ -174,31 +174,55 @@ struct AddLovedOneView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
-                    // Header
-                    HStack {
-                        Text("add_loved_one_title".localized)
-                            .font(.system(size: Theme.FontSize.h1, weight: .bold))
-                            .foregroundColor(Theme.Colors.textPrimary)
+                    // Header with gradient accent
+                    HStack(alignment: .center) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("add_loved_one_title".localized)
+                                .font(.system(size: Theme.FontSize.h1, weight: .bold))
+                                .foregroundColor(Theme.Colors.textPrimary)
+
+                            Text("Add someone special to recognize")
+                                .font(.system(size: Theme.FontSize.caption))
+                                .foregroundColor(Theme.Colors.textSecondary)
+                        }
                         Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Theme.Gradients.subtle)
+                                .frame(width: 48, height: 48)
+
+                            Image(systemName: "person.fill.badge.plus")
+                                .font(.system(size: 22))
+                                .foregroundStyle(Theme.Gradients.primary)
+                        }
                     }
 
                     // Photo Picker Section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 16) {
                         HStack {
-                            Text("add_loved_one_photos".localized)
-                                .font(.system(size: Theme.FontSize.body, weight: .medium))
-                                .foregroundColor(Theme.Colors.textPrimary)
+                            HStack(spacing: 4) {
+                                Text("add_loved_one_photos".localized)
+                                    .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                                    .foregroundColor(Theme.Colors.textPrimary)
 
-                            Text("*")
-                                .foregroundColor(Theme.Colors.danger)
+                                Text("*")
+                                    .foregroundColor(Theme.Colors.danger)
+                            }
 
                             Spacer()
 
-                            Text("\(selectedImages.count) selected")
-                                .font(.system(size: Theme.FontSize.caption))
-                                .foregroundColor(Theme.Colors.textSecondary)
+                            if !selectedImages.isEmpty {
+                                Text("\(selectedImages.count) photo\(selectedImages.count == 1 ? "" : "s")")
+                                    .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                                    .foregroundColor(Theme.Colors.primary)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Theme.Colors.primaryLight)
+                                    .cornerRadius(Theme.CornerRadius.pill)
+                            }
                         }
 
                         // Photo Grid
@@ -207,7 +231,7 @@ struct AddLovedOneView: View {
                                 GridItem(.flexible()),
                                 GridItem(.flexible()),
                                 GridItem(.flexible())
-                            ], spacing: 8) {
+                            ], spacing: 10) {
                                 ForEach(Array(selectedImages.enumerated()), id: \.offset) { index, image in
                                     ZStack(alignment: .topTrailing) {
                                         Image(uiImage: image)
@@ -215,21 +239,31 @@ struct AddLovedOneView: View {
                                             .scaledToFill()
                                             .frame(height: 100)
                                             .clipped()
-                                            .cornerRadius(8)
+                                            .cornerRadius(Theme.CornerRadius.medium)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
+                                                    .stroke(Theme.Colors.primary.opacity(0.3), lineWidth: 2)
+                                            )
 
-                                        // Remove button
+                                        // Remove button with gradient
                                         Button {
                                             selectedImages.remove(at: index)
                                             if index < selectedItems.count {
                                                 selectedItems.remove(at: index)
                                             }
                                         } label: {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .font(.system(size: 20))
-                                                .foregroundColor(.white)
-                                                .shadow(radius: 2)
+                                            ZStack {
+                                                Circle()
+                                                    .fill(Theme.Colors.danger)
+                                                    .frame(width: 24, height: 24)
+
+                                                Image(systemName: "xmark")
+                                                    .font(.system(size: 10, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            }
+                                            .shadow(color: Color.black.opacity(0.2), radius: 4, y: 2)
                                         }
-                                        .padding(4)
+                                        .offset(x: 6, y: -6)
                                     }
                                 }
                             }
@@ -241,15 +275,20 @@ struct AddLovedOneView: View {
                             maxSelectionCount: 10,
                             matching: .images
                         ) {
-                            HStack {
+                            HStack(spacing: 10) {
                                 Image(systemName: "photo.on.rectangle.angled")
-                                Text(selectedImages.isEmpty ? "add_loved_one_add_photos".localized : "add_loved_one_add_photos".localized)
+                                    .font(.system(size: 18, weight: .medium))
+                                Text(selectedImages.isEmpty ? "add_loved_one_add_photos".localized : "Add More Photos")
+                                    .font(.system(size: Theme.FontSize.body, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Theme.Colors.primaryLight)
+                            .background(
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
+                                    .stroke(Theme.Gradients.primary, lineWidth: 2)
+                                    .background(Theme.Colors.primaryLight.cornerRadius(Theme.CornerRadius.medium))
+                            )
                             .foregroundColor(Theme.Colors.primary)
-                            .cornerRadius(Theme.CornerRadius.medium)
                         }
                         .onChange(of: selectedItems) { _, newItems in
                             Task {
@@ -258,24 +297,39 @@ struct AddLovedOneView: View {
                         }
 
                         if let error = photoError {
-                            Text(error)
-                                .font(.system(size: Theme.FontSize.caption))
-                                .foregroundColor(Theme.Colors.danger)
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(.system(size: 14))
+                                Text(error)
+                                    .font(.system(size: Theme.FontSize.caption))
+                            }
+                            .foregroundColor(Theme.Colors.danger)
                         }
 
-                        Text("Add clear photos of their face for better recognition. Multiple photos from different angles work best.")
-                            .font(.system(size: Theme.FontSize.caption))
-                            .foregroundColor(Theme.Colors.textSecondary)
-                    }
-                    .padding(16)
-                    .background(Color.white)
-                    .cornerRadius(Theme.CornerRadius.medium)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                            .stroke(photoError != nil ? Theme.Colors.danger : Theme.Colors.border, lineWidth: 1)
-                    )
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "lightbulb.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(Theme.Colors.accent)
 
-                    // Form
+                            Text("Add clear photos of their face for better recognition. Multiple photos from different angles work best.")
+                                .font(.system(size: Theme.FontSize.caption))
+                                .foregroundColor(Theme.Colors.textSecondary)
+                                .lineSpacing(2)
+                        }
+                        .padding(12)
+                        .background(Theme.Colors.accentLight.opacity(0.5))
+                        .cornerRadius(Theme.CornerRadius.small)
+                    }
+                    .padding(20)
+                    .background(Theme.Colors.cardBackground)
+                    .cornerRadius(Theme.CornerRadius.large)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.CornerRadius.large)
+                            .stroke(photoError != nil ? Theme.Colors.danger : Theme.Colors.borderLight, lineWidth: 1)
+                    )
+                    .themeShadow(Theme.Shadows.small)
+
+                    // Form Section
                     VStack(spacing: 20) {
                         RinkuTextField(
                             label: "add_loved_one_full_name".localized,
@@ -314,9 +368,10 @@ struct AddLovedOneView: View {
                     }
 
                     // Actions
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         RinkuButton(
                             title: "action_save".localized,
+                            icon: "checkmark",
                             variant: .primary,
                             size: .large,
                             isLoading: isProcessingPhotos,
@@ -327,22 +382,24 @@ struct AddLovedOneView: View {
 
                         RinkuButton(
                             title: "action_cancel".localized,
-                            variant: .secondary,
-                            size: .large,
+                            variant: .ghost,
+                            size: .medium,
                             isDisabled: isProcessingPhotos
                         ) {
                             selectedTab = .lovedOnes
                             resetForm()
                         }
                     }
-                    .padding(.top, 16)
+                    .padding(.top, 8)
 
-                    Spacer(minLength: 100)
+                    
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 32)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+            .padding(.bottom, 100)
             }
-            .background(Theme.Colors.background)
+            .scrollContentBackground(.hidden)
+            .background(Theme.Colors.background.ignoresSafeArea())
 
             // Toast
             if showToast {

@@ -10,25 +10,36 @@ struct RinkuTextField: View {
     var isMultiline: Bool = false
     var leadingIcon: String? = nil
 
+    @FocusState private var isFocused: Bool
+
     private var hasError: Bool {
         errorText != nil && !errorText!.isEmpty
     }
 
     private var borderColor: Color {
-        hasError ? Theme.Colors.danger : Theme.Colors.border
+        if hasError {
+            return Theme.Colors.danger
+        }
+        return isFocused ? Theme.Colors.primary : Theme.Colors.borderLight
+    }
+
+    private var borderWidth: CGFloat {
+        isFocused || hasError ? 2 : 1
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             // Label
             HStack(spacing: 4) {
                 Text(label)
-                    .font(.system(size: Theme.FontSize.body, weight: .medium))
-                    .foregroundColor(Theme.Colors.textPrimary)
+                    .font(.system(size: Theme.FontSize.caption, weight: .semibold))
+                    .foregroundColor(isFocused ? Theme.Colors.primary : Theme.Colors.textSecondary)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
 
                 if isRequired {
                     Text("*")
-                        .font(.system(size: Theme.FontSize.body, weight: .medium))
+                        .font(.system(size: Theme.FontSize.caption, weight: .semibold))
                         .foregroundColor(Theme.Colors.danger)
                 }
             }
@@ -36,9 +47,15 @@ struct RinkuTextField: View {
             // Input Field
             HStack(spacing: 12) {
                 if let icon = leadingIcon {
-                    Image(systemName: icon)
-                        .font(.system(size: 20))
-                        .foregroundColor(Theme.Colors.textSecondary)
+                    ZStack {
+                        Circle()
+                            .fill(Theme.Colors.primaryLight)
+                            .frame(width: 32, height: 32)
+
+                        Image(systemName: icon)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Theme.Colors.primary)
+                    }
                 }
 
                 if isMultiline {
@@ -47,27 +64,34 @@ struct RinkuTextField: View {
                         .foregroundColor(Theme.Colors.textPrimary)
                         .frame(minHeight: 100, maxHeight: 150)
                         .scrollContentBackground(.hidden)
+                        .focused($isFocused)
                 } else {
                     TextField(placeholder, text: $text)
                         .font(.system(size: Theme.FontSize.body))
                         .foregroundColor(Theme.Colors.textPrimary)
+                        .focused($isFocused)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, isMultiline ? 12 : 0)
-            .frame(minHeight: isMultiline ? nil : 48)
-            .background(Color.white)
+            .padding(.vertical, isMultiline ? 14 : 0)
+            .frame(minHeight: isMultiline ? nil : 52)
+            .background(Theme.Colors.cardBackground)
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                    .stroke(borderColor, lineWidth: 2)
+                    .stroke(borderColor, lineWidth: borderWidth)
             )
+            .animation(.easeOut(duration: 0.15), value: isFocused)
 
             // Helper/Error Text
             if let error = errorText, !error.isEmpty {
-                Text(error)
-                    .font(.system(size: Theme.FontSize.caption))
-                    .foregroundColor(Theme.Colors.danger)
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 12))
+                    Text(error)
+                        .font(.system(size: Theme.FontSize.caption))
+                }
+                .foregroundColor(Theme.Colors.danger)
             } else if let helper = helperText {
                 Text(helper)
                     .font(.system(size: Theme.FontSize.caption))
@@ -78,43 +102,46 @@ struct RinkuTextField: View {
 }
 
 #Preview {
-    VStack(spacing: 24) {
-        RinkuTextField(
-            label: "Full Name",
-            text: .constant(""),
-            placeholder: "e.g., Gabriela Martinez",
-            isRequired: true
-        )
+    ScrollView {
+        VStack(spacing: 24) {
+            RinkuTextField(
+                label: "Full Name",
+                text: .constant(""),
+                placeholder: "e.g., Gabriela Martinez",
+                isRequired: true
+            )
 
-        RinkuTextField(
-            label: "Familiar Name",
-            text: .constant(""),
-            placeholder: "e.g., Gabi (optional)",
-            helperText: "The name you usually call them"
-        )
+            RinkuTextField(
+                label: "Familiar Name",
+                text: .constant(""),
+                placeholder: "e.g., Gabi (optional)",
+                helperText: "The name you usually call them"
+            )
 
-        RinkuTextField(
-            label: "Full Name",
-            text: .constant(""),
-            placeholder: "Required field",
-            errorText: "Full name is required",
-            isRequired: true
-        )
+            RinkuTextField(
+                label: "Full Name",
+                text: .constant(""),
+                placeholder: "Required field",
+                errorText: "Full name is required",
+                isRequired: true
+            )
 
-        RinkuTextField(
-            label: "Memory Prompt",
-            text: .constant(""),
-            placeholder: "e.g., She loves painting...",
-            helperText: "A gentle reminder about this person (optional)",
-            isMultiline: true
-        )
+            RinkuTextField(
+                label: "Memory Prompt",
+                text: .constant(""),
+                placeholder: "e.g., She loves painting...",
+                helperText: "A gentle reminder about this person (optional)",
+                isMultiline: true
+            )
 
-        RinkuTextField(
-            label: "Search",
-            text: .constant(""),
-            placeholder: "Search by name or relationship",
-            leadingIcon: "magnifyingglass"
-        )
+            RinkuTextField(
+                label: "Search",
+                text: .constant(""),
+                placeholder: "Search by name or relationship",
+                leadingIcon: "magnifyingglass"
+            )
+        }
+        .padding(24)
     }
-    .padding()
+    .background(Color(hex: "FAFAFA"))
 }

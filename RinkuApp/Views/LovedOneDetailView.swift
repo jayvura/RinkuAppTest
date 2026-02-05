@@ -142,12 +142,12 @@ struct LovedOneDetailView: View {
                     }
                     .padding(.top, 16)
                     
-                    Spacer(minLength: 100)
+                    
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
             }
-            .background(Theme.Colors.background)
+            .scrollContentBackground(.hidden)
             
             // Toast
             if showToast {
@@ -223,7 +223,7 @@ struct LovedOneDetailView: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -348,7 +348,7 @@ struct LovedOneDetailView: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(Theme.Colors.cardBackground)
         .cornerRadius(Theme.CornerRadius.medium)
         .overlay(
             RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)

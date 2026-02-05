@@ -53,7 +53,7 @@ struct LanguagePickerItem: View {
                     .foregroundColor(Theme.Colors.textSecondary)
             }
             .padding(16)
-            .background(Color.white)
+            .background(Theme.Colors.cardBackground)
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
@@ -176,7 +176,7 @@ struct LanguageOptionButton: View {
                 }
             }
             .padding(20)
-            .background(isSelected ? Theme.Colors.primaryLight : Color.white)
+            .background(isSelected ? Theme.Colors.primaryLight : Theme.Colors.cardBackground)
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)

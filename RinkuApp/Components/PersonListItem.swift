@@ -21,56 +21,69 @@ struct PersonListItem: View {
 
     var body: some View {
         Button(action: { action?() }) {
-            HStack(spacing: 12) {
-                // Avatar
+            HStack(spacing: 14) {
+                // Avatar with gradient
                 ZStack {
                     Circle()
-                        .fill(Theme.Colors.primaryLight)
-                        .frame(width: 48, height: 48)
+                        .fill(Theme.Gradients.subtle)
+                        .frame(width: 52, height: 52)
+
+                    Circle()
+                        .stroke(Theme.Gradients.primary, lineWidth: 2)
+                        .frame(width: 52, height: 52)
 
                     Text(initials)
-                        .font(.system(size: Theme.FontSize.body, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.body, weight: .bold))
                         .foregroundColor(Theme.Colors.primary)
                 }
 
                 // Info
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(name)
                         .font(.system(size: Theme.FontSize.body, weight: .semibold))
                         .foregroundColor(Theme.Colors.textPrimary)
                         .lineLimit(1)
 
-                    Text(relationship)
-                        .font(.system(size: Theme.FontSize.caption))
-                        .foregroundColor(Theme.Colors.textSecondary)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(Theme.Colors.accent.opacity(0.6))
+
+                        Text(relationship)
+                            .font(.system(size: Theme.FontSize.caption))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer()
 
-                // Chevron
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(Theme.Colors.textSecondary)
+                // Chevron with background
+                ZStack {
+                    Circle()
+                        .fill(Theme.Colors.primaryLight)
+                        .frame(width: 32, height: 32)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Theme.Colors.primary)
+                }
             }
             .padding(16)
-            .background(Color.white)
-            .cornerRadius(Theme.CornerRadius.medium)
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                    .stroke(Theme.Colors.border, lineWidth: 1)
-            )
+            .background(Theme.Colors.cardBackground)
+            .cornerRadius(Theme.CornerRadius.large)
+            .themeShadow(Theme.Shadows.small)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(CardButtonStyle())
     }
 }
 
 #Preview {
-    VStack(spacing: 12) {
+    VStack(spacing: 14) {
         PersonListItem(name: "Gabriela Martinez", relationship: "Daughter")
         PersonListItem(name: "Michael Chen", relationship: "Son")
         PersonListItem(name: "John", relationship: "Friend")
     }
-    .padding()
-    .background(Color.gray.opacity(0.1))
+    .padding(20)
+    .background(Color(hex: "FAFAFA"))
 }

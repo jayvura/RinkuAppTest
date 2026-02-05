@@ -4,27 +4,55 @@ enum ButtonVariant {
     case primary
     case secondary
     case destructive
+    case ghost
 }
 
 enum ButtonSize {
+    case small
     case medium
     case large
 
     var height: CGFloat {
         switch self {
+        case .small:
+            return 36
         case .medium:
-            return 44
+            return 48
         case .large:
-            return 52
+            return 56
         }
     }
 
     var horizontalPadding: CGFloat {
         switch self {
+        case .small:
+            return 12
+        case .medium:
+            return 20
+        case .large:
+            return 28
+        }
+    }
+
+    var fontSize: CGFloat {
+        switch self {
+        case .small:
+            return 14
         case .medium:
             return 16
         case .large:
-            return 24
+            return 17
+        }
+    }
+
+    var iconSize: CGFloat {
+        switch self {
+        case .small:
+            return 16
+        case .medium:
+            return 20
+        case .large:
+            return 22
         }
     }
 }
@@ -36,27 +64,23 @@ struct RinkuButton: View {
     var size: ButtonSize = .medium
     var isLoading: Bool = false
     var isDisabled: Bool = false
+    var fullWidth: Bool = true
     let action: () -> Void
+
+    private var useGradient: Bool {
+        variant == .primary
+    }
 
     private var backgroundColor: Color {
         switch variant {
         case .primary:
             return Theme.Colors.primary
         case .secondary:
-            return .white
+            return Theme.Colors.cardBackground
         case .destructive:
             return Theme.Colors.danger
-        }
-    }
-
-    private var pressedBackgroundColor: Color {
-        switch variant {
-        case .primary:
-            return Theme.Colors.primaryDark
-        case .secondary:
-            return Color.gray.opacity(0.1)
-        case .destructive:
-            return Color(hex: "C62828")
+        case .ghost:
+            return .clear
         }
     }
 
@@ -65,14 +89,18 @@ struct RinkuButton: View {
         case .primary, .destructive:
             return .white
         case .secondary:
-            return Theme.Colors.textPrimary
+            return Theme.Colors.primary
+        case .ghost:
+            return Theme.Colors.primary
         }
     }
 
     private var borderColor: Color {
         switch variant {
         case .secondary:
-            return Theme.Colors.border
+            return Theme.Colors.primary.opacity(0.3)
+        case .ghost:
+            return .clear
         default:
             return .clear
         }
@@ -80,64 +108,70 @@ struct RinkuButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 if isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: foregroundColor))
-                        .scaleEffect(0.9)
+                        .scaleEffect(0.85)
                 }
 
                 if let icon = icon, !isLoading {
                     Image(systemName: icon)
-                        .font(.system(size: 20, weight: .medium))
+                        .font(.system(size: size.iconSize, weight: .semibold))
                 }
 
                 Text(title)
-                    .font(.system(size: Theme.FontSize.body, weight: .medium))
+                    .font(.system(size: size.fontSize, weight: .semibold))
             }
             .foregroundColor(foregroundColor)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: fullWidth ? .infinity : nil)
             .frame(height: size.height)
-            .background(backgroundColor)
+            .padding(.horizontal, fullWidth ? 0 : size.horizontalPadding)
+            .background(
+                Group {
+                    if useGradient {
+                        Theme.Gradients.primary
+                    } else {
+                        backgroundColor
+                    }
+                }
+            )
             .cornerRadius(Theme.CornerRadius.medium)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                    .stroke(borderColor, lineWidth: variant == .secondary ? 2 : 0)
+                    .stroke(borderColor, lineWidth: variant == .secondary ? 1.5 : 0)
             )
+            .themeShadow(useGradient ? Theme.Shadows.glow : Theme.Shadows.small)
         }
         .disabled(isDisabled || isLoading)
-        .opacity((isDisabled || isLoading) ? 0.5 : 1.0)
-        .buttonStyle(RinkuButtonStyle(pressedColor: pressedBackgroundColor, variant: variant))
+        .opacity((isDisabled || isLoading) ? 0.6 : 1.0)
+        .buttonStyle(RinkuButtonStyle(variant: variant, useGradient: useGradient))
     }
 }
 
 struct RinkuButtonStyle: ButtonStyle {
-    let pressedColor: Color
     let variant: ButtonVariant
+    let useGradient: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(
-                Group {
-                    if configuration.isPressed {
-                        RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
-                            .fill(pressedColor)
-                    }
-                }
-            )
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
 #Preview {
-    VStack(spacing: 16) {
+    VStack(spacing: 20) {
         RinkuButton(title: "Primary Button", variant: .primary, size: .large) {}
         RinkuButton(title: "Secondary Button", variant: .secondary, size: .large) {}
+        RinkuButton(title: "Ghost Button", variant: .ghost, size: .medium) {}
         RinkuButton(title: "Destructive", variant: .destructive, size: .medium) {}
         RinkuButton(title: "With Icon", icon: "person.fill.badge.plus", variant: .primary) {}
+        RinkuButton(title: "Small Button", variant: .secondary, size: .small) {}
         RinkuButton(title: "Loading", isLoading: true) {}
         RinkuButton(title: "Disabled", isDisabled: true) {}
     }
-    .padding()
+    .padding(24)
+    .background(Color(hex: "FAFAFA"))
 }

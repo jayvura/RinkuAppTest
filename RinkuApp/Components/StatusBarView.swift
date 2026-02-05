@@ -5,18 +5,29 @@ struct StatusBarView: View {
     let message: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: type.iconName)
-                .font(.system(size: 14))
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(type.foregroundColor.opacity(0.15))
+                    .frame(width: 28, height: 28)
+
+                Image(systemName: type.iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(type.foregroundColor)
+            }
 
             Text(message)
-                .font(.system(size: Theme.FontSize.caption))
+                .font(.system(size: Theme.FontSize.caption, weight: .medium))
+                .foregroundColor(type.foregroundColor)
         }
-        .foregroundColor(type.foregroundColor)
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(type.backgroundColor)
-        .clipShape(Capsule())
+        .cornerRadius(Theme.CornerRadius.pill)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.pill)
+                .stroke(type.foregroundColor.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 
@@ -27,5 +38,6 @@ struct StatusBarView: View {
         StatusBarView(type: .warning, message: "Person not recognized")
         StatusBarView(type: .danger, message: "Error occurred")
     }
-    .padding()
+    .padding(24)
+    .background(Color(hex: "FAFAFA"))
 }
