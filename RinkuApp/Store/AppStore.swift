@@ -154,9 +154,11 @@ final class AppStore: ObservableObject {
             
             for dto in remoteLovedOnes {
                 let lovedOneId = dto.id ?? ""
-                
+
                 // Check if we have local photos for this person
-                var localPhotoFileNames = lovedOnes.first { $0.id == lovedOneId }?.photoFileNames ?? []
+                // Use case-insensitive comparison since PostgreSQL normalizes UUIDs to lowercase
+                // but Swift's UUID().uuidString generates uppercase
+                var localPhotoFileNames = lovedOnes.first { $0.id.caseInsensitiveCompare(lovedOneId) == .orderedSame }?.photoFileNames ?? []
                 
                 // Fetch photo records from Supabase
                 if let photos = try? await supabaseService.fetchPhotos(forLovedOneId: lovedOneId) {
@@ -190,8 +192,9 @@ final class AppStore: ObservableObject {
             }
             
             // Handle local-only entries (upload them to Supabase)
+            // Use case-insensitive comparison for UUID matching
             for local in lovedOnes {
-                if !mergedLovedOnes.contains(where: { $0.id == local.id }) {
+                if !mergedLovedOnes.contains(where: { $0.id.caseInsensitiveCompare(local.id) == .orderedSame }) {
                     // This is a local-only entry, upload it to Supabase
                     let dto = LovedOneDTO.from(local)
                     if let created = try? await supabaseService.createLovedOne(dto) {
@@ -208,13 +211,16 @@ final class AppStore: ObservableObject {
                             familyId: local.familyId
                         )
                         mergedLovedOnes.append(updatedLocal)
-                        
+
                         // Also upload the photos for this local entry
                         for fileName in local.photoFileNames {
                             if let image = await PhotoStorage.shared.loadPhoto(fileName: fileName) {
                                 _ = try? await supabaseService.uploadPhoto(image: image, lovedOneId: newId)
                             }
                         }
+                    } else {
+                        // Upload failed - preserve the local entry so we don't lose data
+                        mergedLovedOnes.append(local)
                     }
                 }
             }
@@ -234,10 +240,27 @@ final class AppStore: ObservableObject {
     /// Upload a loved one to Supabase
     private func uploadToSupabase(_ lovedOne: LovedOne) async {
         guard authService.isSignedIn else { return }
-        
+
         do {
             let dto = LovedOneDTO.from(lovedOne)
-            _ = try await supabaseService.createLovedOne(dto)
+            let created = try await supabaseService.createLovedOne(dto)
+
+            // Update local ID if server returned a different one (e.g. case normalization)
+            if let serverId = created.id,
+               serverId.lowercased() != lovedOne.id.lowercased(),
+               let index = lovedOnes.firstIndex(where: { $0.id == lovedOne.id }) {
+                lovedOnes[index] = LovedOne(
+                    id: serverId.lowercased(),
+                    fullName: lovedOne.fullName,
+                    familiarName: lovedOne.familiarName,
+                    relationship: lovedOne.relationship,
+                    memoryPrompt: lovedOne.memoryPrompt,
+                    enrolled: lovedOne.enrolled,
+                    photoFileNames: lovedOne.photoFileNames,
+                    familyId: lovedOne.familyId
+                )
+                saveLovedOnes()
+            }
         } catch {
             print("Failed to upload to Supabase: \(error)")
         }
@@ -271,7 +294,7 @@ final class AppStore: ObservableObject {
     /// Add a loved one with photos (new flow)
     /// If user is in a family, the loved one is automatically added to the family
     func addLovedOne(
-        id: String = UUID().uuidString,
+        id: String = UUID().uuidString.lowercased(),
         fullName: String,
         familiarName: String?,
         relationship: String,

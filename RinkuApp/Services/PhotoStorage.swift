@@ -117,7 +117,8 @@ actor PhotoStorage {
             return
         }
 
-        for file in files where file.hasPrefix(personId) {
+        let lowerId = personId.lowercased()
+        for file in files where file.lowercased().hasPrefix(lowerId) {
             await deletePhoto(fileName: file)
         }
     }

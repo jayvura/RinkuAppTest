@@ -183,6 +183,22 @@
 "tts_this_is" = "Esta persona es %@, tu %@.";
 "tts_memory_prompt" = "%@";
 
+// MARK: - Voice Settings
+"settings_voice" = "Configuración de Voz";
+"settings_voice_subtitle" = "Personaliza cómo suenan los recordatorios";
+"voice_select" = "Voz";
+"voice_system_default" = "Predeterminado del Sistema";
+"voice_speed" = "Velocidad";
+"voice_pitch" = "Tono";
+"voice_preview" = "Probar Voz";
+"voice_preview_text" = "Hola, esta es una vista previa de cómo sonaré.";
+"speech_rate_slow" = "Lento";
+"speech_rate_normal" = "Normal";
+"speech_rate_fast" = "Rápido";
+"pitch_low" = "Bajo";
+"pitch_normal" = "Normal";
+"pitch_high" = "Alto";
+
 // MARK: - Permissions
 "permission_camera_title" = "Acceso a la Cámara";
 "permission_camera_description" = "Necesitamos acceso a la cámara para reconocer rostros";

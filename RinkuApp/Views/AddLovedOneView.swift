@@ -27,6 +27,13 @@ struct AddLovedOneView: View {
     @State private var isProcessingPhotos = false
     @State private var photoError: String? = nil
 
+    // Focus state for keyboard dismissal
+    @FocusState private var focusedField: Field?
+
+    private enum Field: Hashable {
+        case fullName, familiarName, relationship, memoryPrompt
+    }
+
     private var isFormValid: Bool {
         !fullName.trimmingCharacters(in: .whitespaces).isEmpty &&
         !relationship.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -74,7 +81,7 @@ struct AddLovedOneView: View {
     }
 
     private func saveLovedOneWithPhotos() async {
-        let personId = UUID().uuidString
+        let personId = UUID().uuidString.lowercased()
         let authService = AuthService.shared
         let supabaseService = SupabaseService.shared
 
@@ -336,7 +343,9 @@ struct AddLovedOneView: View {
                             text: $fullName,
                             placeholder: "add_loved_one_full_name_placeholder".localized,
                             errorText: fullNameTouched ? fullNameError : nil,
-                            isRequired: true
+                            isRequired: true,
+                            isFocused: focusedField == .fullName,
+                            onTap: { focusedField = .fullName }
                         )
                         .onChange(of: fullName) { _, _ in
                             if fullNameTouched { _ = validate() }
@@ -345,7 +354,9 @@ struct AddLovedOneView: View {
                         RinkuTextField(
                             label: "add_loved_one_familiar_name".localized,
                             text: $familiarName,
-                            placeholder: "add_loved_one_familiar_name_placeholder".localized
+                            placeholder: "add_loved_one_familiar_name_placeholder".localized,
+                            isFocused: focusedField == .familiarName,
+                            onTap: { focusedField = .familiarName }
                         )
 
                         RinkuTextField(
@@ -353,7 +364,9 @@ struct AddLovedOneView: View {
                             text: $relationship,
                             placeholder: "add_loved_one_relationship_placeholder".localized,
                             errorText: relationshipTouched ? relationshipError : nil,
-                            isRequired: true
+                            isRequired: true,
+                            isFocused: focusedField == .relationship,
+                            onTap: { focusedField = .relationship }
                         )
                         .onChange(of: relationship) { _, _ in
                             if relationshipTouched { _ = validate() }
@@ -363,7 +376,9 @@ struct AddLovedOneView: View {
                             label: "add_loved_one_memory_prompt".localized,
                             text: $memoryPrompt,
                             placeholder: "add_loved_one_memory_prompt_placeholder".localized,
-                            isMultiline: true
+                            isMultiline: true,
+                            isFocused: focusedField == .memoryPrompt,
+                            onTap: { focusedField = .memoryPrompt }
                         )
                     }
 
@@ -400,6 +415,10 @@ struct AddLovedOneView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.Colors.background.ignoresSafeArea())
+            .scrollDismissesKeyboard(.interactively)
+            .onTapGesture {
+                focusedField = nil
+            }
 
             // Toast
             if showToast {

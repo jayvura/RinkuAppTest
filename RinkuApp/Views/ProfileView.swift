@@ -16,6 +16,7 @@ struct ProfileView: View {
     @State private var showFullHistory = false
     @State private var showFamilyView = false
     @State private var showGlassesSettings = false
+    @State private var showVoiceSettings = false
     
     private var userName: String {
         authService.currentUser?.fullName ?? authService.currentUser?.email ?? "profile_guest_user".localized
@@ -154,7 +155,14 @@ struct ProfileView: View {
                             audioService.setEnabled(enabled)
                         }
                     )
-                    
+
+                    // Voice Settings Button
+                    if audioService.isEnabled {
+                        VoiceSettingsButton {
+                            showVoiceSettings = true
+                        }
+                    }
+
                     ProfileItem(
                         icon: "bell.fill",
                         label: "settings_notifications".localized,
@@ -299,6 +307,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showGlassesSettings) {
             GlassesSettingsView()
+        }
+        .sheet(isPresented: $showVoiceSettings) {
+            VoiceSettingsView()
         }
         .alert("account_sign_out".localized, isPresented: $showSignOutAlert) {
             Button("action_cancel".localized, role: .cancel) { }

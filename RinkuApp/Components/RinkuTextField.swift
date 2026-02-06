@@ -9,22 +9,28 @@ struct RinkuTextField: View {
     var isRequired: Bool = false
     var isMultiline: Bool = false
     var leadingIcon: String? = nil
+    var isFocused: Bool = false
+    var onTap: (() -> Void)? = nil
 
-    @FocusState private var isFocused: Bool
+    @FocusState private var internalFocus: Bool
 
     private var hasError: Bool {
         errorText != nil && !errorText!.isEmpty
+    }
+
+    private var isActive: Bool {
+        isFocused || internalFocus
     }
 
     private var borderColor: Color {
         if hasError {
             return Theme.Colors.danger
         }
-        return isFocused ? Theme.Colors.primary : Theme.Colors.borderLight
+        return isActive ? Theme.Colors.primary : Theme.Colors.borderLight
     }
 
     private var borderWidth: CGFloat {
-        isFocused || hasError ? 2 : 1
+        isActive || hasError ? 2 : 1
     }
 
     var body: some View {
@@ -33,9 +39,11 @@ struct RinkuTextField: View {
             HStack(spacing: 4) {
                 Text(label)
                     .font(.system(size: Theme.FontSize.caption, weight: .semibold))
-                    .foregroundColor(isFocused ? Theme.Colors.primary : Theme.Colors.textSecondary)
+                    .foregroundColor(isActive ? Theme.Colors.primary : Theme.Colors.textSecondary)
                     .textCase(.uppercase)
                     .tracking(0.5)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 if isRequired {
                     Text("*")
@@ -64,12 +72,12 @@ struct RinkuTextField: View {
                         .foregroundColor(Theme.Colors.textPrimary)
                         .frame(minHeight: 100, maxHeight: 150)
                         .scrollContentBackground(.hidden)
-                        .focused($isFocused)
+                        .focused($internalFocus)
                 } else {
                     TextField(placeholder, text: $text)
                         .font(.system(size: Theme.FontSize.body))
                         .foregroundColor(Theme.Colors.textPrimary)
-                        .focused($isFocused)
+                        .focused($internalFocus)
                 }
             }
             .padding(.horizontal, 16)
@@ -81,7 +89,15 @@ struct RinkuTextField: View {
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.medium)
                     .stroke(borderColor, lineWidth: borderWidth)
             )
-            .animation(.easeOut(duration: 0.15), value: isFocused)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                internalFocus = true
+                onTap?()
+            }
+            .animation(.easeOut(duration: 0.15), value: isActive)
+            .onChange(of: isFocused) { _, newValue in
+                internalFocus = newValue
+            }
 
             // Helper/Error Text
             if let error = errorText, !error.isEmpty {

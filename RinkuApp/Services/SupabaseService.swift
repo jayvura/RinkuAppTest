@@ -332,7 +332,7 @@ struct LovedOneDTO: Codable {
     /// Convert to local LovedOne model
     func toLovedOne(photoFileNames: [String] = []) -> LovedOne {
         var lovedOne = LovedOne(
-            id: id ?? UUID().uuidString,
+            id: (id ?? UUID().uuidString).lowercased(),
             fullName: fullName,
             familiarName: familiarName,
             relationship: relationship,

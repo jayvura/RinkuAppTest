@@ -38,7 +38,7 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
     }
 
     init(
-        id: String = UUID().uuidString,
+        id: String = UUID().uuidString.lowercased(),
         fullName: String,
         familiarName: String? = nil,
         relationship: String,
