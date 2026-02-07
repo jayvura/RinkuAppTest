@@ -183,6 +183,10 @@
 "tts_this_is" = "This is %@, your %@.";
 "tts_memory_prompt" = "%@";
 
+// MARK: - Voice Recording
+"voice_recording_label" = "Voice Recording (Optional)";
+"voice_recording_record" = "Record Voice Message";
+
 // MARK: - Voice Settings
 "settings_voice" = "Voice Settings";
 "settings_voice_subtitle" = "Customize how reminders sound";

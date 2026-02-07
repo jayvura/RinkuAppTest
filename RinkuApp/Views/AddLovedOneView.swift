@@ -10,6 +10,8 @@ struct AddLovedOneView: View {
     @State private var familiarName = ""
     @State private var relationship = ""
     @State private var memoryPrompt = ""
+    @State private var audioFileName: String?
+    @State private var personId = UUID().uuidString.lowercased()
 
     @State private var fullNameError: String? = nil
     @State private var relationshipError: String? = nil
@@ -81,7 +83,6 @@ struct AddLovedOneView: View {
     }
 
     private func saveLovedOneWithPhotos() async {
-        let personId = UUID().uuidString.lowercased()
         let authService = AuthService.shared
         let supabaseService = SupabaseService.shared
 
@@ -117,6 +118,7 @@ struct AddLovedOneView: View {
                     familiarName: familiarName.isEmpty ? nil : familiarName.trimmingCharacters(in: .whitespaces),
                     relationship: relationship.trimmingCharacters(in: .whitespaces),
                     memoryPrompt: memoryPrompt.isEmpty ? nil : memoryPrompt.trimmingCharacters(in: .whitespaces),
+                    audioFileName: audioFileName,
                     photoFileNames: fileNames,
                     enrolled: validPhotoCount > 0
                 )
@@ -380,6 +382,8 @@ struct AddLovedOneView: View {
                             isFocused: focusedField == .memoryPrompt,
                             onTap: { focusedField = .memoryPrompt }
                         )
+
+                        VoiceRecorderView(personId: personId, audioFileName: $audioFileName)
                     }
 
                     // Actions

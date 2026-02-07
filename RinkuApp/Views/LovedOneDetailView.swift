@@ -12,7 +12,8 @@ struct LovedOneDetailView: View {
     @State private var editedFamiliarName: String = ""
     @State private var editedRelationship: String = ""
     @State private var editedMemoryPrompt: String = ""
-    
+    @State private var editedAudioFileName: String?
+
     @State private var showDeleteAlert = false
     @State private var showToast = false
     @State private var toastMessage = ""
@@ -211,7 +212,7 @@ struct LovedOneDetailView: View {
                     Text("Memory Prompt")
                         .font(.system(size: Theme.FontSize.caption))
                         .foregroundColor(Theme.Colors.textSecondary)
-                    
+
                     Text(memoryPrompt)
                         .font(.system(size: Theme.FontSize.body))
                         .foregroundColor(Theme.Colors.textPrimary)
@@ -220,6 +221,11 @@ struct LovedOneDetailView: View {
                         .background(Theme.Colors.primaryLight)
                         .cornerRadius(Theme.CornerRadius.medium)
                 }
+            }
+
+            // Voice Recording (display only)
+            if lovedOne.audioFileName != nil {
+                VoiceRecorderView(personId: lovedOne.id, audioFileName: .constant(lovedOne.audioFileName))
             }
         }
         .padding(16)
@@ -263,6 +269,8 @@ struct LovedOneDetailView: View {
                 helperText: "A gentle reminder about this person",
                 isMultiline: true
             )
+
+            VoiceRecorderView(personId: lovedOne.id, audioFileName: $editedAudioFileName)
         }
     }
     
@@ -414,7 +422,8 @@ struct LovedOneDetailView: View {
         editedFamiliarName = lovedOne.familiarName ?? ""
         editedRelationship = lovedOne.relationship
         editedMemoryPrompt = lovedOne.memoryPrompt ?? ""
-        
+        editedAudioFileName = lovedOne.audioFileName
+
         // Load photos
         Task {
             await loadPhotos()
@@ -443,7 +452,8 @@ struct LovedOneDetailView: View {
         updated.familiarName = editedFamiliarName.isEmpty ? nil : editedFamiliarName.trimmingCharacters(in: .whitespaces)
         updated.relationship = editedRelationship.trimmingCharacters(in: .whitespaces)
         updated.memoryPrompt = editedMemoryPrompt.isEmpty ? nil : editedMemoryPrompt.trimmingCharacters(in: .whitespaces)
-        
+        updated.audioFileName = editedAudioFileName
+
         store.updateLovedOne(updated)
         
         toastMessage = "Changes saved"

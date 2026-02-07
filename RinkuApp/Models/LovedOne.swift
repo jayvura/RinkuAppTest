@@ -6,6 +6,7 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
     var familiarName: String?
     var relationship: String
     var memoryPrompt: String?
+    var audioFileName: String?  // Local file name for voice recording
     var enrolled: Bool
     var photoFileNames: [String]  // Local file names for stored photos
     var familyId: String?  // If set, belongs to a family (shared); otherwise personal
@@ -43,6 +44,7 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
         familiarName: String? = nil,
         relationship: String,
         memoryPrompt: String? = nil,
+        audioFileName: String? = nil,
         enrolled: Bool = false,
         photoFileNames: [String] = [],
         familyId: String? = nil
@@ -52,6 +54,7 @@ struct LovedOne: Identifiable, Equatable, Hashable, Codable {
         self.familiarName = familiarName
         self.relationship = relationship
         self.memoryPrompt = memoryPrompt
+        self.audioFileName = audioFileName
         self.enrolled = enrolled
         self.photoFileNames = photoFileNames
         self.familyId = familyId

@@ -312,10 +312,11 @@ struct LovedOneDTO: Codable {
     let familiarName: String?
     let relationship: String
     let memoryPrompt: String?
+    let audioFileName: String?
     var enrolled: Bool
     let createdAt: Date?
     let updatedAt: Date?
-    
+
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
@@ -324,6 +325,7 @@ struct LovedOneDTO: Codable {
         case familiarName = "familiar_name"
         case relationship
         case memoryPrompt = "memory_prompt"
+        case audioFileName = "audio_file_name"
         case enrolled
         case createdAt = "created_at"
         case updatedAt = "updated_at"
@@ -337,6 +339,7 @@ struct LovedOneDTO: Codable {
             familiarName: familiarName,
             relationship: relationship,
             memoryPrompt: memoryPrompt,
+            audioFileName: audioFileName,
             enrolled: enrolled,
             photoFileNames: photoFileNames
         )
@@ -354,6 +357,7 @@ struct LovedOneDTO: Codable {
             familiarName: lovedOne.familiarName,
             relationship: lovedOne.relationship,
             memoryPrompt: lovedOne.memoryPrompt,
+            audioFileName: lovedOne.audioFileName,
             enrolled: lovedOne.enrolled,
             createdAt: nil,
             updatedAt: nil

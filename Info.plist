@@ -53,7 +53,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Rinku AI needs camera access to recognize faces of your loved ones and help you remember who they are.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Rinku AI needs microphone access to play voice reminders about your loved ones.</string>
+	<string>Rinku AI needs microphone access to record voice messages and play voice reminders about your loved ones.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

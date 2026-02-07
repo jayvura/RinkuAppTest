@@ -40,7 +40,7 @@ struct VoiceOption: Identifiable, Equatable {
 }
 
 /// Service for text-to-speech audio reminders with bilingual support
-final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
+final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegate {
     static let shared = AudioService()
 
     @Published var isSpeaking = false
@@ -50,6 +50,8 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     @Published var selectedVoiceId: String? = nil
 
     private let synthesizer = AVSpeechSynthesizer()
+    private var audioPlayer: AVAudioPlayer?
+    private var pendingAudioFile: String?
     private let languageManager = LanguageManager.shared
 
     private let enabledKey = "audio_reminders_enabled"
@@ -158,18 +160,28 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     }
     
     /// Speak a recognition reminder for a loved one (uses current app language)
+    /// If a voice recording exists, plays the intro via TTS then the recorded audio.
+    /// Otherwise falls back to TTS of intro + text memory prompt.
     @MainActor func speakRecognitionReminder(for lovedOne: LovedOne) {
         guard isEnabled else { return }
-        
-        // Build the reminder message using localized format
+
+        // Build the intro message
         let introFormat = "tts_this_is".localized
-        var message = String(format: introFormat, lovedOne.displayName, lovedOne.relationship)
-        
-        if let memoryPrompt = lovedOne.memoryPrompt, !memoryPrompt.isEmpty {
-            message += " \(memoryPrompt)"
+        let intro = String(format: introFormat, lovedOne.displayName, lovedOne.relationship)
+
+        if let audioFile = lovedOne.audioFileName, !audioFile.isEmpty {
+            // Has voice recording: speak intro, then play audio after TTS finishes
+            pendingAudioFile = audioFile
+            speak(intro)
+        } else {
+            // No voice recording: speak intro + text memory prompt
+            var message = intro
+            if let memoryPrompt = lovedOne.memoryPrompt, !memoryPrompt.isEmpty {
+                message += " \(memoryPrompt)"
+            }
+            pendingAudioFile = nil
+            speak(message)
         }
-        
-        speak(message)
     }
     
     /// Speak custom text (uses current app language for voice)
@@ -266,11 +278,14 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
         speak(sampleText)
     }
     
-    /// Stop speaking
+    /// Stop speaking and audio playback
     func stop() {
+        pendingAudioFile = nil
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
+        audioPlayer?.stop()
+        audioPlayer = nil
         DispatchQueue.main.async {
             self.isSpeaking = false
         }
@@ -279,13 +294,52 @@ final class AudioService: NSObject, ObservableObject, AVSpeechSynthesizerDelegat
     // MARK: - AVSpeechSynthesizerDelegate
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        if let audioFile = pendingAudioFile {
+            pendingAudioFile = nil
+            playRecordedAudio(fileName: audioFile)
+        } else {
+            DispatchQueue.main.async {
+                self.isSpeaking = false
+            }
+        }
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        pendingAudioFile = nil
         DispatchQueue.main.async {
             self.isSpeaking = false
         }
     }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+
+    // MARK: - Recorded Audio Playback
+
+    private func playRecordedAudio(fileName: String) {
+        Task {
+            guard let url = await VoiceRecordingStorage.shared.recordingURL(fileName: fileName) else {
+                DispatchQueue.main.async { self.isSpeaking = false }
+                return
+            }
+            DispatchQueue.main.async {
+                do {
+                    try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                    try AVAudioSession.sharedInstance().setActive(true)
+                    let player = try AVAudioPlayer(contentsOf: url)
+                    player.delegate = self
+                    player.play()
+                    self.audioPlayer = player
+                } catch {
+                    print("Failed to play recorded audio: \(error)")
+                    self.isSpeaking = false
+                }
+            }
+        }
+    }
+
+    // MARK: - AVAudioPlayerDelegate
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         DispatchQueue.main.async {
+            self.audioPlayer = nil
             self.isSpeaking = false
         }
     }

@@ -206,6 +206,7 @@ final class AppStore: ObservableObject {
                             familiarName: local.familiarName,
                             relationship: local.relationship,
                             memoryPrompt: local.memoryPrompt,
+                            audioFileName: local.audioFileName,
                             enrolled: local.enrolled,
                             photoFileNames: local.photoFileNames,
                             familyId: local.familyId
@@ -255,6 +256,7 @@ final class AppStore: ObservableObject {
                     familiarName: lovedOne.familiarName,
                     relationship: lovedOne.relationship,
                     memoryPrompt: lovedOne.memoryPrompt,
+                    audioFileName: lovedOne.audioFileName,
                     enrolled: lovedOne.enrolled,
                     photoFileNames: lovedOne.photoFileNames,
                     familyId: lovedOne.familyId
@@ -299,18 +301,20 @@ final class AppStore: ObservableObject {
         familiarName: String?,
         relationship: String,
         memoryPrompt: String?,
+        audioFileName: String? = nil,
         photoFileNames: [String] = [],
         enrolled: Bool = false
     ) {
         // If user is in a family, automatically add to family
         let familyId = currentFamilyId
-        
+
         let newPerson = LovedOne(
             id: id,
             fullName: fullName,
             familiarName: familiarName?.isEmpty == true ? nil : familiarName,
             relationship: relationship,
             memoryPrompt: memoryPrompt?.isEmpty == true ? nil : memoryPrompt,
+            audioFileName: audioFileName,
             enrolled: enrolled,
             photoFileNames: photoFileNames,
             familyId: familyId
